@@ -1,0 +1,14 @@
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\bin\Release\netcoreapp2.1\win10-x64\hostpolicy.dll
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\bin\Release\netcoreapp2.1\win10-x64\hostfxr.dll
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\bin\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.exe
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\bin\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.deps.json
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\bin\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.runtimeconfig.json
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\bin\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.runtimeconfig.dev.json
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\bin\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.dll
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\bin\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.pdb
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\obj\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.csprojAssemblyReference.cache
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\obj\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.csproj.CoreCompileInputs.cache
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\obj\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.AssemblyInfoInputs.cache
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\obj\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.AssemblyInfo.cs
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\obj\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.dll
+D:\Injectors\CNUSPACKER FIX\CNUSPACKER FIX\obj\Release\netcoreapp2.1\win10-x64\CNUSPACKER FIX.pdb
