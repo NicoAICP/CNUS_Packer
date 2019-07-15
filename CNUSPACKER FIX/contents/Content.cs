@@ -6,7 +6,6 @@ using CNUS_packer.utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace CNUS_packer.contents
 {
@@ -42,41 +41,48 @@ namespace CNUS_packer.contents
 
         public Content()
         {
-
         }
+
         public int getID()
         {
             return this.ID;
         }
+
         public void setID(int id)
         {
             this.ID = id;
         }
+
         public short getType()
         {
             return type;
         }
+
         public void addType(short type)
         {
             this.type |= type;
         }
+
         public void removeType(short type)
         {
             this.type &= (short)~type;
         }
+
         public void setType(short type)
         {
             this.type = type;
         }
+
         public short getIndex()
         {
             return index;
         }
+
         public void setIndex(short index)
         {
             this.index = index;
-
         }
+
         public long getParentTitleID()
         {
             return parentTitleID;
@@ -106,6 +112,7 @@ namespace CNUS_packer.contents
         {
             this.curFileOffset = curFileOffset;
         }
+
         public void setEncryptedFileSize(long size)
         {
             this.encryptedFileSize = size;
@@ -198,28 +205,33 @@ namespace CNUS_packer.contents
 
             buffer.Write(getGroupID());
 
-            buffer.Write((byte)unkwn);
+            buffer.Write(unkwn);
 
-            return  new Pair<byte[], long>(ms.ToArray(), content_offset);
+            return new Pair<byte[], long>(ms.ToArray(), content_offset);
         }
+
         public long getOffsetForFileAndIncrease(FSTEntry fstEntry)
         {
             long old_fileoffset = getCurFileOffset();
             setCurFileOffset(old_fileoffset + utils.utils.align(fstEntry.getFilesize(), ALIGNMENT_IN_CONTENT_FILE));
             return old_fileoffset;
         }
+
         public void resetFileOffsets()
         {
             curFileOffset = 0;
         }
+
         private List<FSTEntry> getFSTEntries()
         {
             return entries;
         }
+
         public int getFSTEntryNumber()
         {
             return entries.Count;
         }
+
         public byte[] getAsData()
         {
             MemoryStream bf_strm = new MemoryStream(getDataSize());
@@ -231,10 +243,12 @@ namespace CNUS_packer.contents
             buffer.Write(getHash());
             return bf_strm.ToArray();
         }
+
         public int getDataSize()
         {
             return 48;
         }
+
         public void packContentToFile(string outputDir)
         {
             Console.WriteLine("Packing Content " + getID().ToString("00000000") +"\n");
@@ -270,17 +284,18 @@ namespace CNUS_packer.contents
         private string packEncrypted(string outputDir, string decryptedFile, ContentHashes hashes, Encryption encryption)
         {
             string outputFilePath = outputDir+"/"+getID().ToString("00000000") + ".app";
-        if((getType() & TYPE_HASHED) == TYPE_HASHED){
-
-            encryption.encryptFileHashed(decryptedFile,this, outputFilePath, hashes);
+            if((getType() & TYPE_HASHED) == TYPE_HASHED)
+            {
+                encryption.encryptFileHashed(decryptedFile,this, outputFilePath, hashes);
             }
-            else {
+            else
+            {
+                encryption.encryptFileWithPadding(decryptedFile,this, outputFilePath, CONTENT_FILE_PADDING);
+            }
 
-            encryption.encryptFileWithPadding(decryptedFile,this, outputFilePath, CONTENT_FILE_PADDING);
+            return Path.GetFullPath(outputFilePath);
         }
 
-        return Path.GetFullPath(outputFilePath);
-    }
         private string packDecrypted()
         {
             string tmp_path = settings.tmpDir + "/" + getID().ToString("00000000") + ".dec";
@@ -322,6 +337,7 @@ namespace CNUS_packer.contents
             }
             return Path.GetFullPath(tmp_path);
         }
+
         public void update(List<FSTEntry> entries)
         {
             if(entries != null)
@@ -329,6 +345,7 @@ namespace CNUS_packer.contents
                 this.entries = entries;
             }
         }
+
         public bool equals(Object other)
         {
             bool result;

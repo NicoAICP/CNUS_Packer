@@ -5,9 +5,6 @@ using System.IO;
 using CNUS_packer.packaging;
 using CNUS_packer.crypto;
 
-using Console = System.Console;
-using System.Xml;
-
 namespace CNUS_packer
 {
     class Program
@@ -226,6 +223,7 @@ namespace CNUS_packer
 
             return key;
         }
+
         private static void showHelp()
         {
             Console.WriteLine("help:");

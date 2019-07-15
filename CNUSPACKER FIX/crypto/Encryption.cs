@@ -3,10 +3,7 @@ using CNUS_packer.packaging;
 using CNUS_packer.utils;
 
 using System;
-
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Security.Cryptography;
 
 namespace CNUS_packer.crypto
@@ -27,17 +24,20 @@ namespace CNUS_packer.crypto
             }
             catch(Exception e)
             {
-                System.Console.WriteLine(e.Message);
+                Console.WriteLine(e.Message);
             }
-            init(key, iv); 
+            init(key, iv);
         }
+
         public void init(IV iv)
         {
             init(getKey(), iv);
         }
+
         public void init(Key key) {
             init(key, new IV());
         }
+
         public void init(Key key, IV iv)
         {
             setKey(key);
@@ -55,36 +55,38 @@ namespace CNUS_packer.crypto
                 Environment.Exit(2);
             }
         }
+
         public void encryptFileWithPadding(FST fst, string output_filename, short contentID, int BLOCKSIZE)
         {
-            FileStream input = System.IO.File.Create("test");
+            FileStream input = File.Create("test");
             input.Flush();
-            
+
             MemoryStream memoryStream = new MemoryStream(fst.getAsData());
             memoryStream.WriteTo(input);
             FileStream output = new FileStream(output_filename, FileMode.Create);
             MemoryStream ivstrm = new MemoryStream(0x10);
             BinaryWriter ivbin = new BinaryWriter(ivstrm);
             ivbin.Write(contentID);
-            
-        IV iv = new IV(ivstrm.ToArray());
-        encryptSingleFile(input, output, fst.getDataSize(), iv, BLOCKSIZE);
-    }
-        public void encryptFileWithPadding(string file, Content content, string output_filename, int BLOCKSIZE) 
+
+            IV iv = new IV(ivstrm.ToArray());
+            encryptSingleFile(input, output, fst.getDataSize(), iv, BLOCKSIZE);
+        }
+
+        public void encryptFileWithPadding(string file, Content content, string output_filename, int BLOCKSIZE)
         {
             FileInfo f1 = new FileInfo(file);
-            FileStream input = System.IO.File.Open(file, FileMode.Open);
-        FileStream output = new FileStream(output_filename, FileMode.Create);
+            FileStream input = File.Open(file, FileMode.Open);
+            FileStream output = new FileStream(output_filename, FileMode.Create);
             MemoryStream ivstrm = new MemoryStream(0x10);
             BinaryWriter ivbin = new BinaryWriter(ivstrm);
             ivbin.Write(content.getID());
             IV iv = new IV(ivstrm.ToArray()) ;
 
-        encryptSingleFile(input, output, f1.Length, iv, BLOCKSIZE);
-    }
+            encryptSingleFile(input, output, f1.Length, iv, BLOCKSIZE);
+        }
+
         public void encryptSingleFile(FileStream input, FileStream output, long length, IV iv, int BLOCKSIZE)
         {
-
             long inputSize = length;
             long targetSIze = utils.utils.align(inputSize, BLOCKSIZE);
 
@@ -109,7 +111,6 @@ namespace CNUS_packer.crypto
 
                 if ((cur_position + BLOCKSIZE) > inputSize)
                 {
-
                     long expectedSize = (inputSize - cur_position);
                     size = (int)expectedSize;
                    MemoryStream buffer = new MemoryStream(BLOCKSIZE);
@@ -124,8 +125,6 @@ namespace CNUS_packer.crypto
                 {
                     int expectedSize = BLOCKSIZE;
                     inBlockBufferRead = utils.utils.getChunkFromStream(input, blockBuffer, overflow, expectedSize);
-
-
                 }
 
                 byte[] output_byte = encryptChunk(blockBuffer, inBlockBufferRead, iv);
@@ -136,20 +135,18 @@ namespace CNUS_packer.crypto
 
                 output.Write(output_byte, 0, size);
 
-
             } while (cur_position < targetSIze && (inBlockBufferRead == BLOCKSIZE));
         }
-       
+
         public void encryptFileHashed(string file, Content content, string output_filename, ContentHashes hashes)
         {
             string input = file;
             string output = output_filename;
-            FileStream ins = System.IO.File.Open(file, System.IO.FileMode.OpenOrCreate);
+            FileStream ins = File.Open(file, FileMode.OpenOrCreate);
             FileStream outs = new FileStream(output, FileMode.OpenOrCreate);
             encryptFileHashed(ins, outs, input.Length, content, hashes);
             FileInfo fi = new FileInfo(output);
             content.setEncryptedFileSize((int)fi.Length);
-
         }
         private void encryptFileHashed(FileStream input, FileStream output, long length, Content content, ContentHashes hashes)
         {
@@ -172,19 +169,16 @@ namespace CNUS_packer.crypto
                     buffer = new_buffer.ToArray();
                 }
                 byte[] output_byte_arr = encryptChunkHashed(buffer, block, hashes, content.getID());
-                if (output_byte_arr.Length != BLOCKSIZE) System.Console.Write("");
+                if (output_byte_arr.Length != BLOCKSIZE) Console.Write("");
                 output.Write(output_byte_arr);
                 block++;
                 int progress = (int)((block * 1.0 / totalblock * 1.0) * 100);
                 if ((block % 100) == 0)
                 {
-                    System.Console.WriteLine("\rEncryption: " + progress + "%");
-
+                    Console.WriteLine("\rEncryption: " + progress + "%");
                 }
-
-
             } while (read == buffer_size);
-            System.Console.WriteLine("\rEncryption: 100%");
+            Console.WriteLine("\rEncryption: 100%");
             input.Close();
             output.Close();
         }
@@ -197,10 +191,10 @@ namespace CNUS_packer.crypto
             for (int i = 0; i < len; i++)
             {
                 dest[i] = src[start + i]; // so 0..n = 0+x..n+x
-
             }
             return dest;
         }
+
         private byte[] encryptChunkHashed(byte[] buffer, int block, ContentHashes hashes, int content_id)
         {
             MemoryStream ivstrm = new MemoryStream(16);
@@ -214,7 +208,7 @@ namespace CNUS_packer.crypto
 
             }catch(Exception e)
             {
-                System.Console.WriteLine(e.Message);
+                Console.WriteLine(e.Message);
             }
             decryptedHashes[1] ^= (byte)content_id;
 
@@ -229,13 +223,14 @@ namespace CNUS_packer.crypto
             output_bb.Write(encryptedhashes);
             output_bb.Write(encryptedContent);
             return output_bb.ToArray();
-            
         }
+
         public byte[] encryptChunk(byte[] blockBuffer, int BLOCKSIZE, IV IV)
         {
 
             return encryptChunk(blockBuffer, 0, BLOCKSIZE, IV);
         }
+
         public byte[] encryptChunk(byte[] blockBuffer, int offset, int BLOCKSIZE, IV IV)
         {
 
@@ -244,33 +239,35 @@ namespace CNUS_packer.crypto
             init(getIV());
 
             byte[] output = encrypt(blockBuffer, offset, BLOCKSIZE);
-           
+
 
             return output;
         }
+
         public byte[] encrypt(byte[] input)
         {
             return encrypt(input, input.Length);
         }
+
         public byte[] encrypt(byte[] input, int len)
         {
             return encrypt(input, 0, len);
         }
+
         public byte[] encrypt(byte[] input, int offset, int len)
         {
             try
             {
-
-
                 return cry.CreateEncryptor().TransformFinalBlock(input, offset, input.Length);
-                
+
             }
             catch (Exception e) {
-                System.Console.WriteLine(e.Message);
+                Console.WriteLine(e.Message);
                 Environment.Exit(2);
             }
             return input;
-            }
+        }
+
         public Key getKey()
         {
             return key;
@@ -291,5 +288,4 @@ namespace CNUS_packer.crypto
             this.iv = iv;
         }
     }
-    
 }

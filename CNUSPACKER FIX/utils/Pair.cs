@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CNUS_packer.utils
+﻿namespace CNUS_packer.utils
 {
     public class Pair<T, K>
     {

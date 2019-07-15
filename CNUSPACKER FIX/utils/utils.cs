@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Numerics;
-
 
 
 namespace CNUS_packer.utils
@@ -29,6 +27,7 @@ namespace CNUS_packer.utils
             }
             Directory.Delete(dir);
         }
+
         public static long align(long input, int alignment)
         {
             long newSize = (input / alignment);
@@ -39,6 +38,7 @@ namespace CNUS_packer.utils
             newSize = newSize * alignment;
             return newSize;
         }
+
         public static byte[] HexStringToByteArray(string s)
         {
             int len = s.Length;
@@ -50,6 +50,7 @@ namespace CNUS_packer.utils
             }
             return data;
         }
+
         public static long HexStringToLong(string s)
         {
             try
@@ -62,6 +63,7 @@ namespace CNUS_packer.utils
                 return 0L;
             }
         }
+
         public static string ByteArraytoString(byte[] ba)
         {
             if (ba == null) return null;
@@ -72,6 +74,7 @@ namespace CNUS_packer.utils
             }
             return hex.ToString();
         }
+
         /*public static int getChunkFromStream(InputStream inputStream, byte[] output, ByteArrayBuffer overflowbuffer, long expectedSize)
         {
             int bytesRead = -1;
@@ -100,6 +103,7 @@ namespace CNUS_packer.utils
             } while (inBlockBuffer != expectedSize);
             return inBlockBuffer;
         }*/
+
         public static int getChunkFromStream(FileStream fs, byte[] output, ByteArrayBuffer overflowbuffer, long expectedSize)
         {
             int inBlockBuffer = 0;
@@ -135,6 +139,7 @@ namespace CNUS_packer.utils
         {
             return copyFileInto(path, output, null);
         }
+
         public static long copyFileInto(string path, FileStream output, string s)
         {
             if(s != null)
@@ -170,5 +175,5 @@ namespace CNUS_packer.utils
             fs.Close();
             return written;
         }
-}
+    }
 }

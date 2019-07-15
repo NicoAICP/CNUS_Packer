@@ -1,10 +1,9 @@
-﻿using System;
+﻿using CNUS_packer.contents;
+using CNUS_packer.fst;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using CNUS_packer.contents;
-using CNUS_packer.crypto;
-using CNUS_packer.fst;
 
 
 namespace CNUS_packer.packaging
@@ -41,16 +40,16 @@ namespace CNUS_packer.packaging
             }
             //File dir_read = new File(config.getDir());
             readFiles(dir_paths, root);
-            System.Console.WriteLine("Files read. Set it to content files.");
+            Console.WriteLine("Files read. Set it to content files.");
             ContentRulesService.applyRules(root, contents, config.getRules());
             addContentDictonary(contents, nusPackage);
             addContentsDictonary(contents, nusPackage);
-            System.Console.WriteLine("Generating the FST.");
-            
+            Console.WriteLine("Generating the FST.");
+
             fst.update();
-            System.Console.WriteLine("Generating the Ticket");
+            Console.WriteLine("Generating the Ticket");
             Ticket ticket = new Ticket(config.getAppInfo().GetTitleID(), config.getEncryptionKey(), config.getEncryptKeyWith());
-            System.Console.WriteLine("Generating the TMD");
+            Console.WriteLine("Generating the TMD");
             TMD tmd = new TMD(config.getAppInfo(), fst, ticket);
             tmd.update();
             addTMDDictonary(tmd, nusPackage);
@@ -59,10 +58,12 @@ namespace CNUS_packer.packaging
             nusPackage.setTMD(tmd);
             return nusPackage;
         }
+
         private static void addContentsDictonary(Contents contents, NUSpackage nusPackage)
         {
             contentsDictionary.Add(contents, nusPackage);
         }
+
         private static void addContentDictonary(Contents contents, NUSpackage nusPackage)
         {
             foreach (Content c in contents.getContents())
@@ -73,6 +74,7 @@ namespace CNUS_packer.packaging
                 }
             }
         }
+
         private static void addTMDDictonary(TMD tmd, NUSpackage nusPackage)
         {
             TMDDictionary.Add(tmd, nusPackage);
@@ -87,6 +89,7 @@ namespace CNUS_packer.packaging
         {
             FSTEntriesDictionary.Add(fstEntries, nusPackage);
         }
+
         public static NUSpackage getPackageByContent(Content content)
         {
             if (contentDictionary.ContainsKey(content))
@@ -165,7 +168,6 @@ namespace CNUS_packer.packaging
             {
                 if (Directory.Exists(f))
                 {
-
                     List<string> newpath = new List<string>();
                     string[] dir = Directory.GetDirectories(f);
                     string[] files = Directory.GetFiles(f);
@@ -183,6 +185,5 @@ namespace CNUS_packer.packaging
                 }
             }
         }
-
     }
 }

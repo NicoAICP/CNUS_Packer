@@ -1,15 +1,11 @@
 ﻿using CNUS_packer.contents;
 using CNUS_packer.fst;
 
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace CNUS_packer.packaging
 {
-    
-
     public class FST
     {
         private byte[] magicbytes = new byte[] { 0x46, 0x53, 0x54, 0x00 };
@@ -34,7 +30,6 @@ namespace CNUS_packer.packaging
 
         public void update()
         {
-
             strings.SetLength(0);
             curEntryOffset = 0;
 
@@ -45,15 +40,18 @@ namespace CNUS_packer.packaging
 
             contentCount = contents.getContentCount();
         }
+
         public static int getStringPos()
         {
             return (int)strings.Position;
         }
+
         public static void addString(string filename)
         {
             strings.Write(Encoding.ASCII.GetBytes(filename));
-            strings.WriteByte((byte)0x00);
+            strings.WriteByte(0x00);
         }
+
         private byte[] copyOfRange(byte[] src, int start, int end)
         {
             int len = end - start;
@@ -65,9 +63,9 @@ namespace CNUS_packer.packaging
             }
             return dest;
         }
+
         public byte[] getAsData()
         {
-           
             MemoryStream stream = new MemoryStream(getDataSize());
             BinaryWriter buffer = new BinaryWriter(stream);
             buffer.Write(magicbytes);
@@ -80,6 +78,7 @@ namespace CNUS_packer.packaging
             buffer.Write(alignment);
             return stream.ToArray();
         }
+
         public int getDataSize()
         {
             int size = 0;
@@ -94,6 +93,7 @@ namespace CNUS_packer.packaging
             alignment = new byte[newsize - size];
             return newsize;
         }
+
         public FSTEntries getFSTEntries()
         {
             if (fileEntries == null)

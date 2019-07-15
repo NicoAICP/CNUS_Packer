@@ -1,9 +1,7 @@
 ﻿using CNUS_packer.crypto;
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace CNUS_packer.packaging
 {
@@ -19,6 +17,7 @@ namespace CNUS_packer.packaging
             setDecryptedKey(decryptedKey);
             setEncryptWith(encryptWith);
         }
+
         public byte[] getAsData()
         {
             Random rdm = new Random();
@@ -45,6 +44,7 @@ namespace CNUS_packer.packaging
             ms.Write(new byte[0x7C]);
             return ms.ToArray();
         }
+
         public Key getEncryptedKey()
         {
             MemoryStream ms = new MemoryStream(0x10);

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using CNUS_packer.contents;
 using CNUS_packer.crypto;
 
@@ -65,23 +63,26 @@ namespace CNUS_packer.packaging
         {
             return getTMD().getContentInfos();
         }
+
         public bool IsDirectoryEmpty(string path)
         {
-            return !System.IO.Directory.EnumerateFileSystemEntries(path).Any();
+            return !Directory.EnumerateFileSystemEntries(path).Any();
         }
+
         public void packContents(string outputDir)
         {
             if (outputDir != null && !IsDirectoryEmpty(outputDir))
             {
                 setOutputdir(outputDir);
             }
-            System.Console.WriteLine("Packing Contents");
+            Console.WriteLine("Packing Contents");
             try
             {
                 getFST().getContents().packContents(outputDir);
-            }catch(Exception e1)
+            }
+            catch (Exception e1)
             {
-                System.Console.WriteLine(e1.Message);
+                Console.WriteLine(e1.Message);
             }
             Content fstContent = getContents().getFSTContent();
             fstContent.setHash(utils.HashUtil.hashSHA2(getContents().getAsData()));
@@ -98,34 +99,33 @@ namespace CNUS_packer.packaging
                 FileStream fos = new FileStream(getOutputdir() + "/title.tmd", FileMode.OpenOrCreate);
                 fos.Write(tmd.getAsData());
                 fos.Close();
-                System.Console.WriteLine("TMD saved to    " + getOutputdir() + "/title.tmd");
+                Console.WriteLine("TMD saved to    " + getOutputdir() + "/title.tmd");
 
                 fos = new FileStream(getOutputdir() + "/title.cert", FileMode.OpenOrCreate);
                 fos.Write(Cert.getCertAsData());
                 fos.Close();
-                System.Console.WriteLine("Cert saved to   " + getOutputdir() + "/title.cert");
+                Console.WriteLine("Cert saved to   " + getOutputdir() + "/title.cert");
 
                 fos = new FileStream(getOutputdir() + "/title.tik", FileMode.OpenOrCreate);
                 fos.Write(ticket.getAsData());
                 fos.Close();
-                System.Console.WriteLine("Ticket saved to " + getOutputdir() + "/title.tik");
-                System.Console.WriteLine();
-
+                Console.WriteLine("Ticket saved to " + getOutputdir() + "/title.tik");
+                Console.WriteLine();
             }
             catch (IOException e)
             {
-                System.Console.WriteLine(e.Message);
+                Console.WriteLine(e.Message);
             }
-
         }
+
         public void printTicketInfos()
         {
-            System.Console.WriteLine("Encrypted with this key           : " + getTicket().getDecryptedKey());
-            System.Console.WriteLine("Key encrypted with this key       : " + getTicket().getEncryptWith());
-            System.Console.WriteLine();
-            System.Console.WriteLine("Encrypted key                     : " + getTicket().getEncryptedKey());
-
+            Console.WriteLine("Encrypted with this key           : " + getTicket().getDecryptedKey());
+            Console.WriteLine("Key encrypted with this key       : " + getTicket().getEncryptWith());
+            Console.WriteLine();
+            Console.WriteLine("Encrypted key                     : " + getTicket().getEncryptedKey());
         }
+
         public Encryption getEncryption()
         {
             return getTMD().getEncryption();

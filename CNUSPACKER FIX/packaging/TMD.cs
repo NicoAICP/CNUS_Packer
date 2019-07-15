@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using CNUS_packer.contents;
 using CNUS_packer.crypto;
 
@@ -11,38 +9,38 @@ namespace CNUS_packer.packaging
 {
     public class TMD
     {
-        private int signatureType = 0x00010004;  
-        private byte[] signature = new byte[0x100];                            
+        private int signatureType = 0x00010004;
+        private byte[] signature = new byte[0x100];
         private byte[] padding0 = new byte[0x3C];
         private static MemoryStream issuer_stream = new MemoryStream(0x40);
 
 
         private byte[] issuer;
-        private byte version = 0x01;                                           
-        private byte CACRLVersion = 0x00;                                      
-        private byte signerCRLVersion = 0x00;                                  
-        private byte padding1 = 0x00;                                          
+        private byte version = 0x01;
+        private byte CACRLVersion = 0x00;
+        private byte signerCRLVersion = 0x00;
+        private byte padding1 = 0x00;
 
-        private long systemVersion = 0x000500101000400AL;                      
-                                                                               
-        private int titleType = 0x000100;                                      
-        private short groupID = 0x0000;                                        
-        private uint appType = 0x80000000;          
+        private long systemVersion = 0x000500101000400AL;
+
+        private int titleType = 0x000100;
+        private short groupID = 0x0000;
+        private uint appType = 0x80000000;
         private int random1 = 0;
         private int random2 = 0;
         private byte[] reserved = new byte[50];
-        private int accessRights = 0x0000;                                     
-        private short titleVersion = 0x00;                                     
-        private short contentCount = 0x00;                                     
-        private short bootIndex = 0x00;                                        
-        private byte[] padding3 = new byte[2];                                 
-        private byte[] SHA2 = new byte[0x20];                                  
+        private int accessRights = 0x0000;
+        private short titleVersion = 0x00;
+        private short contentCount = 0x00;
+        private short bootIndex = 0x00;
+        private byte[] padding3 = new byte[2];
+        private byte[] SHA2 = new byte[0x20];
 
         private ContentInfos contentInfos = null;
         private Contents contents = null;
 
         private Ticket ticket;
-        
+
         public TMD(AppXMLInfo appInfo, FST fst, Ticket ticket)
         {
             setGroupID(appInfo.GetGroupID());
@@ -54,6 +52,7 @@ namespace CNUS_packer.packaging
             WriteIssues();
             contentInfos = new ContentInfos();
         }
+
         private void setContents(Contents contents)
         {
             if (contents != null)
@@ -62,13 +61,14 @@ namespace CNUS_packer.packaging
                 contentCount = contents.getContentCount();
             }
         }
-        void WriteIssues() {
 
+        void WriteIssues()
+        {
             issuer_stream.Write(utils.utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000"));
             this.issuer = issuer_stream.ToArray();
         }
 
-            
+
         public void update()
         {
             updateContents();
@@ -76,7 +76,7 @@ namespace CNUS_packer.packaging
 
         public void updateContents()
         {
-            this.contentCount = (short)(contents.getContentCount());
+            this.contentCount = contents.getContentCount();
 
             ContentInfo firstContentInfo = new ContentInfo(contents.getContentCount());
             byte[] randomHash = new byte[0x20];
@@ -86,10 +86,12 @@ namespace CNUS_packer.packaging
             firstContentInfo.setSHA2Hash(utils.HashUtil.hashSHA2(contents.getAsData()));
             getContentInfos().setContentInfo(0, firstContentInfo);
         }
+
         public void updateContentInfoHash()
         {
-            this.SHA2 = utils.HashUtil.hashSHA2(getContentInfos().getAsData());
+            this.SHA2 = HashUtil.hashSHA2(getContentInfos().getAsData());
         }
+
         public byte[] getAsData()
         {
             MemoryStream bf_strm =  new MemoryStream(getDataSize());
@@ -125,6 +127,7 @@ namespace CNUS_packer.packaging
             //buffer.put(certs); not needed
             return bf_strm.ToArray();
         }
+
         public int getDataSize()
         {
             int staticSize = 0x204;

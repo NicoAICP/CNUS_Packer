@@ -1,8 +1,6 @@
 ﻿
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace CNUS_packer.contents
 {
@@ -14,11 +12,11 @@ namespace CNUS_packer.contents
 
         public ContentInfos()
         {
-
         }
+
         public void setContentInfo(int index, ContentInfo contentInfo)
         {
-            if(index<0 && index > (contentinfos.Length - 1))
+            if (index < 0 && index > (contentinfos.Length - 1))
             {
                 throw new Exception("Error on setting ContentInfo, index " + index + " invalid");
             }
@@ -28,6 +26,7 @@ namespace CNUS_packer.contents
             }
             contentinfos[index] = contentInfo;
         }
+
         public ContentInfo getContentInfo(int index)
         {
             if (index < 0 && index > (contentinfos.Length - 1))
@@ -40,6 +39,7 @@ namespace CNUS_packer.contents
             }
             return contentinfos[index];
         }
+
         public byte[] getAsData()
         {
             MemoryStream buffer = new MemoryStream(ContentInfo.getDataSizeStatic() * contentinfos.Length);
@@ -50,6 +50,7 @@ namespace CNUS_packer.contents
             }
             return buffer.ToArray();
         }
+
         public int getDataSize()
         {
             return contentinfos.Length * ContentInfo.getDataSizeStatic();

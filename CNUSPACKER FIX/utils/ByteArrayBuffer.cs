@@ -1,21 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CNUS_packer.utils
+﻿namespace CNUS_packer.utils
 {
     public class ByteArrayBuffer
     {
         public byte[] buffer;
         int lengthOfDataInBuffer;
+
         public ByteArrayBuffer(int length)
         {
-            buffer = new byte[(int)length];
+            buffer = new byte[length];
         }
+
         public int getLengthOfDataInBuffer()
         {
             return lengthOfDataInBuffer;
         }
+
         public void setLengthOfDataInBuffer(int lengthOfDataInBuffer)
         {
             this.lengthOfDataInBuffer = lengthOfDataInBuffer;

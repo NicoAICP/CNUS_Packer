@@ -1,30 +1,27 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 
 namespace CNUS_packer.contents
 {
-   public class ContentInfo
+    public class ContentInfo
     {
         private short indexOffset = 0x00;
         private short commandCount = 0x0B;
         private byte[] SHA2hash = new byte[0x20];
 
-        public ContentInfo() : this((short) 0)
+        public ContentInfo() : this(0)
         {
-            
         }
-        public ContentInfo(short contentCount): this((short) 0, contentCount)
-        {
 
+        public ContentInfo(short contentCount): this(0, contentCount)
+        {
         }
+
         public ContentInfo(short indexOffset, short contentCount)
         {
             this.indexOffset = indexOffset;
             this.commandCount = contentCount;
         }
+
         public byte[] getAsData()
         {
             MemoryStream ms = new MemoryStream(0x24);
@@ -40,7 +37,7 @@ namespace CNUS_packer.contents
             return 0x24;
         }
 
-         public int getDataSize()
+        public int getDataSize()
         {
             return 0x24;
         }
@@ -59,6 +56,7 @@ namespace CNUS_packer.contents
         {
             this.indexOffset = indexOffset;
         }
+
         public byte[] getSHA2Hash()
         {
             return SHA2hash;
@@ -73,6 +71,5 @@ namespace CNUS_packer.contents
         {
             this.commandCount = commandCount;
         }
-
     }
 }
