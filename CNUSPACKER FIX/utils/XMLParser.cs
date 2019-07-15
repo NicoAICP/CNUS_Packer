@@ -15,7 +15,7 @@ namespace CNUS_packer.utils
         /// </summary>
         /// <param name="source">Copy children FROM this XmlNode</param>
         /// <param name="destination">Copy children TO this XmlNode</param>
-        
+
     }
     public class XMLParser
     {
@@ -23,23 +23,23 @@ namespace CNUS_packer.utils
         private XmlDocument document = new XmlDocument();
 
 
-       
+
         public void loadDocument(string path)
         {
             XmlDocument document = new XmlDocument();
             //System.Console.WriteLine(path);
             this.document.Load(path);
-           
+
            //string xmlcontents = this.document.InnerXml;
 
             //System.Console.WriteLine(xmlcontents);
-            
+
         }
-        
+
         public AppXMLInfo getAppXMLInfo()
-            {
-                AppXMLInfo appxmlinfo = new AppXMLInfo();
-                appxmlinfo.SetOsVersion(getValueOfElementAsLongHex("app/os_version", 0));
+        {
+            AppXMLInfo appxmlinfo = new AppXMLInfo();
+            appxmlinfo.SetOsVersion(getValueOfElementAsLongHex("app/os_version", 0));
             appxmlinfo.SetTitleID(getValueOfElementAsLongHex("app/title_id", 0));
             appxmlinfo.SetTitleVersion((short)getValueOfElementAsLongHex("app/title_version", 0));
             appxmlinfo.SetSdkVersion((int)getValueOfElementAsInt("app/sdk_version", 0));
@@ -49,7 +49,7 @@ namespace CNUS_packer.utils
             //appxmlinfo.SetCommon_id(getValueOfElementAsLongHex("app/common_id", 0));
 
             return appxmlinfo;
-            }
+        }
         public long getValueOfElementAsInt(string element, int index)
         {
             return int.Parse(getValueOfElement(element, index));
@@ -99,7 +99,6 @@ namespace CNUS_packer.utils
             if(document == null)
             {
                 System.Console.WriteLine("Please load a document first!");
-
             }
             //XmlNodeList list = document.GetElementsByTagName(element);
             //if(list == null)
@@ -109,14 +108,13 @@ namespace CNUS_packer.utils
             //}
            // System.Console.WriteLine(document.InnerXml);
             XmlNode node = document.SelectSingleNode(element);
-            if(node.InnerText == null)
+            if(node == null || node.InnerText == null)
             {
-               
                 System.Console.WriteLine("Node is null");
                 return "";
             }
             return node.InnerText;
         }
     }
-    }
+}
 

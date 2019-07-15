@@ -17,10 +17,17 @@ namespace CNUS_packer.utils
             {
                 foreach(string dirpath in contents)
                 {
-                    deleteDir(dirpath);
+                    if (Directory.Exists(dirpath))
+                    {
+                        deleteDir(dirpath);
+                    }
+                    else
+                    {
+                        File.Delete(dirpath);
+                    }
                 }
             }
-            System.IO.File.Delete(dir);
+            Directory.Delete(dir);
         }
         public static long align(long input, int alignment)
         {
@@ -95,11 +102,10 @@ namespace CNUS_packer.utils
         }*/
         public static int getChunkFromStream(FileStream fs, byte[] output, ByteArrayBuffer overflowbuffer, long expectedSize)
         {
-            int bytesRead = -1;
             int inBlockBuffer = 0;
             do
             {
-                bytesRead = fs.Read(overflowbuffer.buffer, overflowbuffer.getLengthOfDataInBuffer(), overflowbuffer.getSpaceLeft());
+                int bytesRead = fs.Read(overflowbuffer.buffer, overflowbuffer.getLengthOfDataInBuffer(), overflowbuffer.getSpaceLeft());
 
                 if (bytesRead <= 0) break;
                 overflowbuffer.addLengthOfDataInBuffer(bytesRead);
@@ -133,12 +139,11 @@ namespace CNUS_packer.utils
         {
             if(s != null)
             {
-                System.Console.WriteLine(s);
-
+                Console.WriteLine(s);
             }
-           
-            FileStream fs = System.IO.File.Open(path, FileMode.OpenOrCreate);
-            
+
+            FileStream fs = File.Open(path, FileMode.OpenOrCreate);
+
             long written = 0;
             long filesize = fs.Length;
             int buffer_size = 0x10000;
@@ -146,7 +151,6 @@ namespace CNUS_packer.utils
             long cycle = 0;
             do
             {
-                
                 int read = fs.Read(buffer);
                 if (read <= 0) break;
                 output.Write(buffer, 0, read);
@@ -154,14 +158,14 @@ namespace CNUS_packer.utils
                 if ((cycle % 10) == 0 && s != null)
                 {
                     int progress = (int)((written * 1.0 / filesize * 1.0) * 100);
-                    System.Console.WriteLine("\r" + s + " : " + progress + "%");
+                    Console.WriteLine("\r" + s + " : " + progress + "%");
 
                 }
 
             } while (written < filesize);
             if(s != null)
             {
-                System.Console.WriteLine("\r" + output + ": 100%");
+                Console.WriteLine("\r" + output + ": 100%");
             }
             fs.Close();
             return written;
