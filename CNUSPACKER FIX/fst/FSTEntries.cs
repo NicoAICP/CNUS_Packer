@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using CNUS_packer.contents;
 using CNUS_packer.packaging;
 
 
 namespace CNUS_packer.fst
 {
-   public class FSTEntries
+    public class FSTEntries
     {
         private List<FSTEntry> entries = new List<FSTEntry>();
+
         public FSTEntries()
         {
             FSTEntry root = new FSTEntry(true);
             entries.Add(root);
         }
+
         public List<FSTEntry> getEntries()
         {
             if (entries == null)
@@ -28,6 +29,7 @@ namespace CNUS_packer.fst
          {
              return entries.isEmpty();
          }*/
+
         public bool addEntry(FSTEntry entry)
         {
             if (!entry.getIsDir())
@@ -38,6 +40,7 @@ namespace CNUS_packer.fst
             getEntries().Add(entry);
             return true;
         }
+
         public void update()
         {
             foreach (FSTEntry entry in getEntries())
@@ -46,6 +49,7 @@ namespace CNUS_packer.fst
             }
             updateDirRefs();
         }
+
         public List<FSTEntry> getFSTEntriesByContent(Content content)
         {
             List<FSTEntry> result = new List<FSTEntry>();
@@ -57,8 +61,8 @@ namespace CNUS_packer.fst
                 }
             }
             return result;
-
         }
+
         public int getFSTEntryCount()
         {
             int count = 0;
@@ -68,6 +72,7 @@ namespace CNUS_packer.fst
             }
             return count;
         }
+
         public byte[] getAsData()
         {
             MemoryStream buffer = new MemoryStream(getDataSize());
@@ -77,6 +82,7 @@ namespace CNUS_packer.fst
             }
             return buffer.ToArray();
         }
+
         public int getDataSize()
         {
             return getFSTEntryCount() * 0x10;

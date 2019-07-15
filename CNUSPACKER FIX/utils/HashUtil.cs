@@ -1,10 +1,7 @@
 ﻿
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using System.Text;
-using Console = System.Console;
 
 namespace CNUS_packer.utils
 {
@@ -15,7 +12,7 @@ namespace CNUS_packer.utils
             SHA256 sha256;
             try
             {
-                sha256 = SHA256Managed.Create();
+                sha256 = SHA256.Create();
             }
             catch (Exception e)
             {
@@ -25,6 +22,7 @@ namespace CNUS_packer.utils
 
             return sha256.ComputeHash(data);
         }
+
         public static byte[] hashSHA1(byte[] data)
         {
             SHA1 sha1 = SHA1.Create("SHA-1");
@@ -41,22 +39,20 @@ namespace CNUS_packer.utils
              }
 
             return returning;
-             
-            
         }
-      
+
         public static byte[] hashSHA1(string filepath)
         {
             return hashSHA1(filepath, 0);
         }
+
         public static byte[] hashSHA1(string filepath, int alignment)
         {
             byte[] hash = new byte[0x14];
-            SHA1 sha1 = SHA1Managed.Create();
+            SHA1 sha1 = SHA1.Create();
             try
             {
-
-                FileStream fs = System.IO.File.Open(filepath, FileMode.Open);
+                FileStream fs = File.Open(filepath, FileMode.Open);
 
                 hash = Hash(sha1, fs, fs.Length, 0x8000, alignment);
             }
@@ -67,7 +63,6 @@ namespace CNUS_packer.utils
 
             return hash;
         }
-       
 
         private static byte[] copyOfRange(byte[] src, int start, int end)
         {
@@ -82,8 +77,6 @@ namespace CNUS_packer.utils
         }
         public static byte[] Hash(SHA1 digest, FileStream fs, long inputSize, int bufferSize, int alignment)
         {
-
-
             long target_size = alignment == 0 ? inputSize : utils.align(inputSize, alignment);
 
             long cur_position = 0;
@@ -112,7 +105,6 @@ namespace CNUS_packer.utils
                 {
                     int expectedSize = bufferSize;
                     inBlockBufferRead = utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
-
                 }
 
 
@@ -120,9 +112,8 @@ namespace CNUS_packer.utils
 
                 cur_position += inBlockBufferRead;
             } while (cur_position < target_size && (inBlockBufferRead == bufferSize));
-            fs.Close();
 
-            
+            fs.Close();
             return digest.ComputeHash(blockBuffer, 0, check);
         }
     }

@@ -9,18 +9,17 @@ namespace CNUS_packer.fst
 {
     public enum Types
     {
-        DIR = (byte)0x01,
-        notInNUS = (byte)0x80,
-        WiiVC = (byte) 0x02
+        DIR = 0x01,
+        notInNUS = 0x80,
+        WiiVC = 0x02
     }
     public enum Flags
     {
-        NOBIGFILE = (short)0x04,
-        HASHED = (short) 0x400
+        NOBIGFILE = 0x04,
+        HASHED = 0x400
     }
-   
 
-public class FSTEntry
+    public class FSTEntry
     {
         //private File file;
         private string filepath;
@@ -53,15 +52,15 @@ public class FSTEntry
 
         private bool notInPackage = false;
 
-       /* public FSTEntry(File file) : this(file, false)
+        /* public FSTEntry(File file) : this(file, false)
         {
-           
+
         }*/
         public FSTEntry(string filepath) : this(filepath, false)
         {
 
         }
-       /* public FSTEntry(File file, bool notInPackage)
+        /* public FSTEntry(File file, bool notInPackage)
         {
             if(file == null || !file.exists())
             {
@@ -80,6 +79,7 @@ public class FSTEntry
                 decryptedSHA1 = null;
             }
         }*/
+
         public FSTEntry(string filepath, bool notInPackage)
         {
             //if(filepath == null || !System.IO.File.Exists(filepath) || !Directory.Exists(filepath))
@@ -92,11 +92,12 @@ public class FSTEntry
 
             setFileSize(filepath);
             setNotInPackage(notInPackage);
-            if (System.IO.File.Exists(filepath))
+            if (File.Exists(filepath))
             {
                 decryptedSHA1 = null;
             }
         }
+
         public FSTEntry(bool root)
         {
             filepath = null;
@@ -106,37 +107,45 @@ public class FSTEntry
                 setDir(true);
             }
         }
+
         public void addChildren(FSTEntry fstEntry)
         {
             getChildren().Add(fstEntry);
             fstEntry.setParent(this);
         }
+
         public bool isNotInPackage()
         {
             return notInPackage;
         }
+
         public void setNotInPackage(bool notInPackage)
         {
             this.notInPackage = notInPackage;
         }
+
         public FSTEntry getParent()
         {
             return this.parent;
         }
+
         public void setParent(FSTEntry child)
         {
             this.parent = child;
         }
+
         private Content getContent()
         {
             return content;
         }
-       public void setContent(Content content)
+
+        public void setContent(Content content)
         {
             setFlags(content.getEntriesFlags());
             this.content = content;
         }
-       public void setContentRecursive(Content content)
+
+        public void setContentRecursive(Content content)
         {
             setContent(content);
             foreach(FSTEntry entry in getChildren())
@@ -144,74 +153,82 @@ public class FSTEntry
                 entry.setContentRecursive(content);
             }
         }
+
         public string getFile()
         {
             return filepath;
         }
+
         public string getFilename()
         {
             return filename;
         }
+
         public void setFileName(string filename)
         {
             this.filename = filename;
         }
+
         public long getFilesize()
         {
             if (!isFile()) return 0;
             return filesize;
         }
+
         public void setFileSize(string file)
         {
-            long filesize = 0;
-            if (System.IO.File.Exists(file))
+            if (File.Exists(file))
             {
                 FileInfo f1 = new FileInfo(file);
-                filesize = f1.Length;
-                this.filesize = filesize;
+                this.filesize = f1.Length;
             }
-            else
-            {
-                
-            }
-           
         }
+
         public long getFileOffset()
         {
             return this.fileoffset;
         }
+
         public void setFileOffset(long fileOffset)
         {
             this.fileoffset = fileOffset;
         }
+
         private void setIsRoot(bool isRoot)
         {
             this.isRoot = isRoot;
         }
+
         public bool getIsRoot()
         {
             return isRoot;
         }
-public void setDir(bool isDir)
+
+        public void setDir(bool isDir)
         {
             this.isDir = isDir;
         }
+
         public bool getIsDir()
         {
             return isDir;
         }
+
         public bool isFile()
         {
             return !(getIsDir() || isNotInPackage());
         }
+
         public bool isBigFile()
         {
             return bigFile;
         }
+
         public void setBigFile(bool bigFile)
         {
             this.bigFile = bigFile;
         }
+
         public bool isHashedFile()
         {
             return hashedFile;
@@ -221,6 +238,7 @@ public void setDir(bool isDir)
         {
             this.hashedFile = hashedFile;
         }
+
         public byte getType()
         {
             byte type = 0;
@@ -229,10 +247,12 @@ public void setDir(bool isDir)
             if (getFilename().EndsWith("nfs")) type |= (byte)Types.WiiVC;
             return type;
         }
+
         public short getFlags()
         {
             return flags;
         }
+
         public FSTEntry getEntryByName(string name)
         {
             FSTEntry result = null;
@@ -246,49 +266,52 @@ public void setDir(bool isDir)
             }
             return result;
         }
+
         public byte[] getAsData()
         {
             MemoryStream ms = new MemoryStream(getDataSize());
             BinaryWriter buffer = new BinaryWriter(ms);
-                if (getIsRoot())
+            if (getIsRoot())
+            {
+                buffer.Write((byte)1);
+                buffer.Write(new byte[0x07]);
+                buffer.Write(root_entryCount);
+                buffer.Write(new byte[0x04]);
+            }
+            else
+            {
+                buffer.Write(getType());
+                buffer.Write((byte)((nameOffset >> 16) & 0xFF));       //We need to write a 24bit int..
+                buffer.Write((short)((nameOffset) & 0xFFFF));
+                if (getIsDir())
                 {
-                    buffer.Write((byte)1);
-                    buffer.Write(new byte[0x07]);
-                    buffer.Write(root_entryCount);
-                    buffer.Write(new byte[0x04]);
-                }
-                else
-                {
-                    buffer.Write(getType());
-                    buffer.Write((byte)((nameOffset >> 16) & 0xFF));       //We need to write a 24bit int..
-                    buffer.Write((short)((nameOffset) & 0xFFFF));
-                    if (getIsDir())
-                    {
-                        buffer.Write(parentOffset);
-                        buffer.Write(nextOffset);
+                    buffer.Write(parentOffset);
+                    buffer.Write(nextOffset);
 
-                    }else if (isFile())
-                    {
-                        buffer.Write((int)(fileoffset >> 5));
-                        buffer.Write((int)filesize);
-                    }else if (isNotInPackage())
-                    {
-                        buffer.Write(0);
-                        buffer.Write((int)filesize);
-                    }
-                    buffer.Write(getFlags());
-                    buffer.Write((short)content.getID());
                 }
-                if(children != null)
+                else if (isFile())
                 {
-                    foreach(FSTEntry entry in getChildren())
-                    {
-                        buffer.Write(entry.getAsData());
-                    }
+                    buffer.Write((int)(fileoffset >> 5));
+                    buffer.Write((int)filesize);
                 }
-                return ms.ToArray();
-            
+                else if (isNotInPackage())
+                {
+                    buffer.Write(0);
+                    buffer.Write((int)filesize);
+                }
+                buffer.Write(getFlags());
+                buffer.Write((short)content.getID());
+            }
+            if(children != null)
+            {
+                foreach(FSTEntry entry in getChildren())
+                {
+                    buffer.Write(entry.getAsData());
+                }
+            }
+            return ms.ToArray();
         }
+
         public int getDataSize()
         {
             int size = 0x10;
@@ -298,6 +321,7 @@ public void setDir(bool isDir)
             }
             return size;
         }
+
         public byte[] getDecryptedHash()
         {
             if(decryptedSHA1 == null)
@@ -306,15 +330,16 @@ public void setDir(bool isDir)
             }
             return decryptedSHA1;
         }
+
         public void setNameOffset(int offset)
         {
             if(offset > 0xFFFFFF)
             {
-                System.Console.WriteLine("Warning: filename offset is too big. Maximum is "+0xFFFFFF+" tried to set to " + offset);
-
+                Console.WriteLine("Warning: filename offset is too big. Maximum is "+0xFFFFFF+" tried to set to " + offset);
             }
             this.nameOffset = offset;
         }
+
         public void update()
         {
             setNameOffset(packaging.FST.getStringPos());
@@ -335,8 +360,8 @@ public void setDir(bool isDir)
             {
                 entry.update();
             }
-
         }
+
         public FSTEntry updateDirRefs()
         {
             if (!(getIsDir() || getIsRoot())) return null;
@@ -345,7 +370,7 @@ public void setDir(bool isDir)
                 setParentOffset(getParent().getEntryOffset());
             }
             FSTEntry result = null;
-            for(int  i = 0; i < getDirChildren().Count; i++)
+            for (int  i = 0; i < getDirChildren().Count; i++)
             {
                 FSTEntry cur_dir = getDirChildren()[i];
                 if (i + 1 < getDirChildren().Count)
@@ -353,7 +378,7 @@ public void setDir(bool isDir)
                     cur_dir.setNextOffset(getDirChildren()[i + 1].entryOffset);
                 }
                 FSTEntry cur_result = cur_dir.updateDirRefs();
-                if(cur_result != null)
+                if (cur_result != null)
                 {
                     FSTEntry cur_foo = cur_result.getParent();
                     while(cur_foo.getNextOffset() == 0)
@@ -362,28 +387,34 @@ public void setDir(bool isDir)
                     }
                     cur_result.setNextOffset(cur_foo.getNextOffset());
                 }
-                if(!(i+1 < getDirChildren().Count)){
+                if (!(i+1 < getDirChildren().Count))
+                {
                     result = cur_dir;
                 }
             }
             return result;
         }
+
         private int getNextOffset()
         {
-            return this.nextOffset;
+            return nextOffset;
         }
+
         public void setEntryOffset(int entryOffset)
         {
             this.entryOffset = entryOffset;
         }
+
         public int getEntryOffset()
         {
             return entryOffset;
         }
+
         public void setNextOffset(int nextOffset)
         {
             this.nextOffset = nextOffset;
         }
+
         public string toString()
         {
             StringBuilder sb = new StringBuilder();
@@ -398,29 +429,29 @@ public void setDir(bool isDir)
             }
             return sb.ToString();
         }
+
         public void printRecursive(int space)
         {
             for(int i = 0; i<space; i++)
             {
-                System.Console.Write(" ");
+                Console.Write(" ");
             }
-            System.Console.Write(getFilename());
+            Console.Write(getFilename());
             if (isNotInPackage())
             {
-                System.Console.Write(" (not in package) ");
-
+                Console.Write(" (not in package) ");
             }
-            System.Console.WriteLine();
+            Console.WriteLine();
             foreach(FSTEntry child in getDirChildren(true))
             {
                 child.printRecursive(space + 1);
-
             }
             foreach (FSTEntry child in getFileChildren(true))
             {
                 child.printRecursive(space + 1);
             }
         }
+
         public List<FSTEntry> getFSTEntriesByContent(Content content)
         {
             List<FSTEntry> entries = new List<FSTEntry>();
@@ -428,14 +459,12 @@ public void setDir(bool isDir)
             {
                 if (getIsDir())
                 {
-                    System.Console.WriteLine("The folder \"" + getFilename() + "\" is emtpy. Please add a dummy file to it.");
-
+                    Console.WriteLine("The folder \"" + getFilename() + "\" is emtpy. Please add a dummy file to it.");
                 }
                 else
                 {
-                    System.Console.WriteLine("The file \"" + getFilename() + "\" is not assigned to any content (.app).");
-                    System.Console.WriteLine("Please delete it or write a corresponding content rule");
-
+                    Console.WriteLine("The file \"" + getFilename() + "\" is not assigned to any content (.app).");
+                    Console.WriteLine("Please delete it or write a corresponding content rule");
                 }
                 Environment.Exit(0);
             }
@@ -452,6 +481,7 @@ public void setDir(bool isDir)
             }
             return entries;
         }
+
         public List<FSTEntry> getChildren()
         {
             if(children == null)
@@ -460,6 +490,7 @@ public void setDir(bool isDir)
             }
             return children;
         }
+
         public int getEntryCount()
         {
             int count = 1;
@@ -469,6 +500,7 @@ public void setDir(bool isDir)
             }
             return count;
         }
+
         public void setParentOffset(int i)
         {
             this.parentOffset = i;
@@ -478,10 +510,12 @@ public void setDir(bool isDir)
         {
             this.root_entryCount = fstEntryCount;
         }
+
         public List<FSTEntry> getDirChildren()
         {
             return getDirChildren(false);
         }
+
         public List<FSTEntry> getDirChildren(bool all)
         {
             List<FSTEntry> result = new List<FSTEntry>();
@@ -495,10 +529,12 @@ public void setDir(bool isDir)
             }
             return result;
         }
+
         public List<FSTEntry> getFileChildren()
         {
             return getFileChildren(false);
         }
+
         public List<FSTEntry> getFileChildren(bool all)
         {
             List<FSTEntry> result = new List<FSTEntry>();
@@ -511,22 +547,15 @@ public void setDir(bool isDir)
             }
             return result;
         }
+
         public void calculateDecryptedHash()
         {
             decryptedSHA1 = utils.HashUtil.hashSHA1(filepath, 0x8000);
         }
+
         public void setFlags(short flags)
         {
             this.flags = flags;
         }
-        
     }
-
-    }
-    
-
-
-
-
-
-
+}

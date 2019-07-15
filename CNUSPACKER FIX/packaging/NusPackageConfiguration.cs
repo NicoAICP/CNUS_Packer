@@ -1,8 +1,6 @@
 ﻿using CNUS_packer.crypto;
 using CNUS_packer.utils;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CNUS_packer.packaging
 {
@@ -14,15 +12,16 @@ namespace CNUS_packer.packaging
         private Key encryptKeyWith;
         private ContentRules rules;
         private string fullGameDir = null;
+
         public NusPackageConfiguration(string dir, AppXMLInfo appInfo, Key encryptionKey, Key encryptKeyWith, ContentRules rules)
         {
-            
             setDir(dir);
             setAppInfo(appInfo);
             setEncryptionKey(encryptionKey);
             setEncryptKeyWith(encryptKeyWith);
             setRules(rules);
         }
+
         public string getDir()
         {
             return dir;

@@ -5,7 +5,6 @@ using CNUS_packer.utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace CNUS_packer.contents
 {
@@ -18,28 +17,34 @@ namespace CNUS_packer.contents
         {
             setFSTContent(getNewContent());
         }
+
         public Content getFSTContent()
         {
             return this.fstContent;
         }
+
         public void setFSTContent(Content content)
         {
             this.fstContent = content;
             content.setFSTContent(true);
         }
+
         public Content GetContent()
         {
             return this.fstContent;
         }
+
         public Content getNewContent()
         {
             return getNewContent(false);
         }
+
         public Content getNewContent(bool isHashed)
         {
-            ContentDetails details = new ContentDetails(isHashed, (short)0x0000, 0x0, (short)0x0000);
+            ContentDetails details = new ContentDetails(isHashed, 0, 0, 0);
             return getNewContent(details);
         }
+
         public Content getNewContent(ContentDetails details)
         {
             Content content = new Content();
@@ -64,10 +69,12 @@ namespace CNUS_packer.contents
             getContents().Add(content);
             return content;
         }
+
         public short getContentCount()
         {
             return (short)getContents().Count;
         }
+
         public byte[] getAsData()
         {
             MemoryStream buffer = new MemoryStream(getDataSize());
@@ -77,6 +84,7 @@ namespace CNUS_packer.contents
             }
             return buffer.ToArray();
         }
+
         public int getDataSize()
         {
             int size = 0x00;
@@ -86,6 +94,7 @@ namespace CNUS_packer.contents
             }
             return size;
         }
+
         public byte[] getFSTContentHeaderAsData()
         {
             long content_offset = 0;
@@ -98,6 +107,7 @@ namespace CNUS_packer.contents
             }
             return buffer.ToArray();
         }
+
         public int getFSTContentHeaderDataSize()
         {
             int size = 0;
@@ -107,6 +117,7 @@ namespace CNUS_packer.contents
             }
             return size;
         }
+
         public List<Content> getContents()
         {
             if (contents == null)
@@ -115,6 +126,7 @@ namespace CNUS_packer.contents
             }
             return contents;
         }
+
         public void resetFileOffsets()
         {
             foreach (Content c in getContents())
@@ -122,6 +134,7 @@ namespace CNUS_packer.contents
                 c.resetFileOffsets();
             }
         }
+
         public void update(FSTEntries fileEntries)
         {
 
@@ -130,6 +143,7 @@ namespace CNUS_packer.contents
                 c.update(fileEntries.getFSTEntriesByContent(c));
             }
         }
+
         public void packContents(string outputDir)
         {
             foreach(Content c in getContents())
@@ -147,10 +161,10 @@ namespace CNUS_packer.contents
             Console.WriteLine("-------------");
             Console.WriteLine("Packed all contents\n\n");
         }
+
         public void deleteContent(Content cur_content)
         {
             contents.Remove(cur_content);
         }
-
     }
 }

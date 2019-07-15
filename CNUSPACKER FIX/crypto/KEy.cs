@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CNUS_packer.crypto
+﻿namespace CNUS_packer.crypto
 {
     public class Key
     {
@@ -20,7 +16,6 @@ namespace CNUS_packer.crypto
 
         public Key(string s) : this(utils.utils.HexStringToByteArray(s))
         {
-            
         }
 
         public byte[] getKey()
@@ -41,8 +36,7 @@ namespace CNUS_packer.crypto
             return LENGTH;
         }
 
-       
-    public string toString()
+        public string toString()
         {
             return utils.utils.ByteArraytoString(key);
         }

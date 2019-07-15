@@ -1,17 +1,14 @@
 ﻿using CNUS_packer.contents;
 using CNUS_packer.fst;
 
-
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace CNUS_packer.packaging
 {
-   public class ContentRulesService
+    public class ContentRulesService
     {
-        public static long MAX_CONTENT_LENGTH = (long)(0xBFFFFFFFL * 0.975); 
+        public static long MAX_CONTENT_LENGTH = (long)(0xBFFFFFFFL * 0.975);
 
         public static long cur_content_size = 0L;
 
@@ -20,10 +17,10 @@ namespace CNUS_packer.packaging
 
         public static void applyRules(FSTEntry root, Contents targetContents, ContentRules rules)
         {
-            System.Console.WriteLine("-----");
+            Console.WriteLine("-----");
             foreach (ContentRules.ContentRule rule in rules.GetRules())
             {
-                System.Console.WriteLine("Apply rule " + rule.getPattern());
+                Console.WriteLine("Apply rule " + rule.getPattern());
                 if (rule.isContentPerMatch())
                 {
                     setNewContentRecursiveRule("", rule.getPattern(), root, targetContents, rule);
@@ -44,6 +41,7 @@ namespace CNUS_packer.packaging
                 Console.WriteLine("-----");
             }
         }
+
         private static Content setNewContentRecursiveRule(string path, string pattern, FSTEntry cur_entry, Contents targetContents, ContentRules.ContentRule rule)
         {
             path += cur_entry.getFilename() + "/";
@@ -91,8 +89,8 @@ namespace CNUS_packer.packaging
                 cur_entry.setContent(result);
             }
             return result;
-
         }
+
         private static bool setContentRecursiveRule(string path, string pattern, FSTEntry cur_entry, Contents targetContents, ContentDetails contentDetails)
         {
             path += cur_entry.getFilename() + "/";
@@ -161,6 +159,5 @@ namespace CNUS_packer.packaging
             }
             return result;
         }
-
     }
 }

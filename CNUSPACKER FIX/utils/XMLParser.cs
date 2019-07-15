@@ -1,10 +1,4 @@
-﻿
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml;
+﻿using System.Xml;
 
 namespace CNUS_packer.utils
 {
@@ -15,14 +9,12 @@ namespace CNUS_packer.utils
         /// </summary>
         /// <param name="source">Copy children FROM this XmlNode</param>
         /// <param name="destination">Copy children TO this XmlNode</param>
-
     }
+
     public class XMLParser
     {
         //private org.w3c.dom.Document document;
         private XmlDocument document = new XmlDocument();
-
-
 
         public void loadDocument(string path)
         {
@@ -30,10 +22,9 @@ namespace CNUS_packer.utils
             //System.Console.WriteLine(path);
             this.document.Load(path);
 
-           //string xmlcontents = this.document.InnerXml;
+            //string xmlcontents = this.document.InnerXml;
 
             //System.Console.WriteLine(xmlcontents);
-
         }
 
         public AppXMLInfo getAppXMLInfo()
@@ -50,6 +41,7 @@ namespace CNUS_packer.utils
 
             return appxmlinfo;
         }
+
         public long getValueOfElementAsInt(string element, int index)
         {
             return int.Parse(getValueOfElement(element, index));
@@ -74,7 +66,8 @@ namespace CNUS_packer.utils
         {
             return getValueOfElement(element, 0);
         }
-       /* public string getValueOfElement(string element, int index)
+
+        /* public string getValueOfElement(string element, int index)
         {
             if (document == null)
             {
@@ -94,6 +87,7 @@ namespace CNUS_packer.utils
             }
             return node.getTextContent().ToString();
         }*/
+
         public string getValueOfElement(string element, int index)
         {
             if(document == null)
@@ -106,7 +100,7 @@ namespace CNUS_packer.utils
             //    System.Console.WriteLine("List is null");
             //    return "";
             //}
-           // System.Console.WriteLine(document.InnerXml);
+            //System.Console.WriteLine(document.InnerXml);
             XmlNode node = document.SelectSingleNode(element);
             if(node == null || node.InnerText == null)
             {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CNUS_packer
+﻿namespace CNUS_packer
 {
     public class settings
     {

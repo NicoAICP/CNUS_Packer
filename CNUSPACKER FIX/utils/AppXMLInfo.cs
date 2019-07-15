@@ -1,8 +1,4 @@
 ﻿
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace CNUS_packer.utils
 {
     public class AppXMLInfo
@@ -16,9 +12,9 @@ namespace CNUS_packer.utils
         private short groupID = 0;
         private byte[] osMask = new byte[32];
         private long common_id = 0x0L;
+
         public AppXMLInfo()
         {
-
         }
 
         public int GetVersion()
@@ -110,6 +106,7 @@ namespace CNUS_packer.utils
         {
             common_id = value;
         }
+
         public string toString()
         {
             return "AppXMLInfo [version=" + version + ", OSVersion=" + osVersion + ", titleID=" + titleID

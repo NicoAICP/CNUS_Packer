@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CNUS_packer.packaging
+﻿namespace CNUS_packer.packaging
 {
     public class ContentDetails
     {
@@ -13,6 +9,7 @@ namespace CNUS_packer.packaging
         private long parentTitleID = 0x0;
 
         private short entriesFlag = 0x0000;
+
         public ContentDetails(bool isHashed, short groupID, long parentTitleID, short entriesFlags)
         {
             setHashed(isHashed);
@@ -20,6 +17,7 @@ namespace CNUS_packer.packaging
             setParentTitleID(parentTitleID);
             setEntriesFlag(entriesFlags);
         }
+
         public bool GetisHashed()
         {
             return isHashed;
