@@ -142,29 +142,27 @@ namespace CNUS_packer.utils
 
         public static long copyFileInto(string path, FileStream output, string s)
         {
-            if(s != null)
+            if (s != null)
             {
                 Console.WriteLine(s);
             }
 
-            FileStream fs = File.Open(path, FileMode.OpenOrCreate);
+            FileStream fs = File.Open(path, FileMode.Open);
 
             long written = 0;
             long filesize = fs.Length;
             int buffer_size = 0x10000;
             byte[] buffer = new byte[buffer_size];
-            long cycle = 0;
             do
             {
                 int read = fs.Read(buffer);
                 if (read <= 0) break;
                 output.Write(buffer, 0, read);
                 written += read;
-                if ((cycle % 10) == 0 && s != null)
+                if (s != null)
                 {
                     int progress = (int)((written * 1.0 / filesize * 1.0) * 100);
                     Console.WriteLine("\r" + s + " : " + progress + "%");
-
                 }
 
             } while (written < filesize);

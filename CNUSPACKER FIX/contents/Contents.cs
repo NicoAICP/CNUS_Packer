@@ -155,8 +155,8 @@ namespace CNUS_packer.contents
             }
             NUSpackage nuspackage = NUSPackageFactory.getPackageByContents(this);
             Encryption encryption = nuspackage.getEncryption();
-            Console.WriteLine("Packing the FST into " + fstContent.getID().ToString("00000000") + ".app");
-            string fst_path = outputDir + "/" + fstContent.getID().ToString("00000000")+".app";
+            Console.WriteLine("Packing the FST into " + fstContent.getID().ToString("X8") + ".app");
+            string fst_path = outputDir + "/" + fstContent.getID().ToString("X8")+".app";
             encryption.encryptFileWithPadding(nuspackage.getFST(), fst_path, (short)getFSTContent().getID(), Content.CONTENT_FILE_PADDING);
             Console.WriteLine("-------------");
             Console.WriteLine("Packed all contents\n\n");

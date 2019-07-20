@@ -88,7 +88,8 @@ namespace CNUS_packer.crypto
         public void encryptSingleFile(FileStream input, FileStream output, long length, IV iv, int BLOCKSIZE)
         {
             long inputSize = length;
-            long targetSIze = utils.utils.align(inputSize, BLOCKSIZE);
+            long targetSize = utils.utils.align(inputSize, BLOCKSIZE);
+            Console.WriteLine("targetSize: " + targetSize);
 
             byte[] blockBuffer = new byte[BLOCKSIZE];
             int inBlockBufferRead;
@@ -99,7 +100,6 @@ namespace CNUS_packer.crypto
             bool first = true;
             do
             {
-                int size = 0;
                 if (first)
                 {
                     first = false;
@@ -112,42 +112,49 @@ namespace CNUS_packer.crypto
                 if ((cur_position + BLOCKSIZE) > inputSize)
                 {
                     long expectedSize = (inputSize - cur_position);
-                    size = (int)expectedSize;
-                   MemoryStream buffer = new MemoryStream(BLOCKSIZE);
+                    MemoryStream buffer = new MemoryStream(BLOCKSIZE);
                     inBlockBufferRead = utils.utils.getChunkFromStream(input, blockBuffer, overflow, expectedSize);
+                    Console.WriteLine("inBlockBufferRead here is: " + inBlockBufferRead);
 
-                    buffer.Write(copyOfRange(blockBuffer, 0, BLOCKSIZE));
-
-                    blockBuffer = buffer.ToArray();
+                    buffer.Write(copyOfRange(blockBuffer, 0, inBlockBufferRead));
+                    Console.WriteLine("length of blockBuffer: " + blockBuffer.Length);
+                    blockBuffer = buffer.GetBuffer();
+                    //blockBuffer = buffer.ToArray();
+                    Console.WriteLine("length of blockBuffer: " + blockBuffer.Length);
                     inBlockBufferRead = BLOCKSIZE;
                 }
                 else
                 {
-                    int expectedSize = BLOCKSIZE;
-                    inBlockBufferRead = utils.utils.getChunkFromStream(input, blockBuffer, overflow, expectedSize);
+                    inBlockBufferRead = utils.utils.getChunkFromStream(input, blockBuffer, overflow, BLOCKSIZE);
                 }
 
                 byte[] output_byte = encryptChunk(blockBuffer, inBlockBufferRead, iv);
 
-                setIV(new IV(copyOfRange(output_byte, output_byte.Length - 16, 32768)));
+                Console.WriteLine("BLOCKSIZE-16: " + (BLOCKSIZE - 16) + ", " + BLOCKSIZE);
+                Console.WriteLine("output length: " + output_byte.Length);
+
+                setIV(new IV(copyOfRange(output_byte, BLOCKSIZE - 16, BLOCKSIZE))); // this one
 
                 cur_position += inBlockBufferRead;
 
-                output.Write(output_byte, 0, size);
+                output.Write(output_byte, 0, inBlockBufferRead);
 
-            } while (cur_position < targetSIze && (inBlockBufferRead == BLOCKSIZE));
+            } while (cur_position < targetSize && (inBlockBufferRead == BLOCKSIZE));
         }
 
         public void encryptFileHashed(string file, Content content, string output_filename, ContentHashes hashes)
         {
-            string input = file;
-            string output = output_filename;
-            FileStream ins = File.Open(file, FileMode.OpenOrCreate);
-            FileStream outs = new FileStream(output, FileMode.OpenOrCreate);
-            encryptFileHashed(ins, outs, input.Length, content, hashes);
-            FileInfo fi = new FileInfo(output);
-            content.setEncryptedFileSize((int)fi.Length);
+            FileStream ins = File.OpenRead(file);
+            FileStream outs = File.Open(output_filename, FileMode.OpenOrCreate);
+
+            Console.WriteLine("file.Length: " + file.Length);
+            Console.WriteLine("file: " + file);
+
+            encryptFileHashed(ins, outs, file.Length, content, hashes);
+            FileInfo fi = new FileInfo(output_filename);
+            content.setEncryptedFileSize(fi.Length);
         }
+
         private void encryptFileHashed(FileStream input, FileStream output, long length, Content content, ContentHashes hashes)
         {
             int BLOCKSIZE = 0x10000;
@@ -182,6 +189,7 @@ namespace CNUS_packer.crypto
             input.Close();
             output.Close();
         }
+
         private byte[] copyOfRange(byte[] src, int start, int end)
         {
             int len = end - start;
@@ -227,13 +235,11 @@ namespace CNUS_packer.crypto
 
         public byte[] encryptChunk(byte[] blockBuffer, int BLOCKSIZE, IV IV)
         {
-
             return encryptChunk(blockBuffer, 0, BLOCKSIZE, IV);
         }
 
         public byte[] encryptChunk(byte[] blockBuffer, int offset, int BLOCKSIZE, IV IV)
         {
-
             if (IV != null) setIV(IV);
 
             init(getIV());
@@ -256,13 +262,14 @@ namespace CNUS_packer.crypto
 
         public byte[] encrypt(byte[] input, int offset, int len)
         {
+            Console.WriteLine("input length, offset, len: " + input.Length + ", " + offset + ", " + len);
             try
             {
-                return cry.CreateEncryptor().TransformFinalBlock(input, offset, input.Length);
-
+                return cry.CreateEncryptor().TransformFinalBlock(input, offset, len);
             }
             catch (Exception e) {
                 Console.WriteLine(e.Message);
+                Console.WriteLine(e.ToString());
                 Environment.Exit(2);
             }
             return input;

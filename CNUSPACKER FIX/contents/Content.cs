@@ -251,7 +251,7 @@ namespace CNUS_packer.contents
 
         public void packContentToFile(string outputDir)
         {
-            Console.WriteLine("Packing Content " + getID().ToString("00000000") +"\n");
+            Console.WriteLine("Packing Content " + getID().ToString("X8") +"\n");
 
             NUSpackage nusPackage = NUSPackageFactory.getPackageByContent(this);
             Encryption encryption = nusPackage.getEncryption();
@@ -266,31 +266,32 @@ namespace CNUS_packer.contents
 
             ContentHashes contentHashes = new ContentHashes(decryptedFile, isHashed());
 
-            string h3_path = outputDir + "/" + getID().ToString("00000000") + ".h3";
+            string h3_path = outputDir + "/" + getID().ToString("X8") + ".h3";
 
             contentHashes.saveH3ToFile(h3_path);
             setHash(contentHashes.getTMDHash());
             Console.WriteLine();
-            Console.WriteLine("Encrypt content (" + getID().ToString("00000000") +")");
+            Console.WriteLine("Encrypt content (" + getID().ToString("X8") +")");
             string encryptedFile = packEncrypted(outputDir, decryptedFile, contentHashes, encryption);
 
             setEncryptedFileSize(encryptedFile.Length);
 
             Console.WriteLine();
-            Console.WriteLine("Content " + getID().ToString("00000000") + " packed!");
+            Console.WriteLine("Content " + getID().ToString("X8") + " packed!");
             Console.WriteLine("-------------");
         }
 
         private string packEncrypted(string outputDir, string decryptedFile, ContentHashes hashes, Encryption encryption)
         {
-            string outputFilePath = outputDir+"/"+getID().ToString("00000000") + ".app";
+            string outputFilePath = outputDir + "/" + getID().ToString("X8") + ".app";
             if((getType() & TYPE_HASHED) == TYPE_HASHED)
             {
-                encryption.encryptFileHashed(decryptedFile,this, outputFilePath, hashes);
+                Console.WriteLine("hI");
+                encryption.encryptFileHashed(decryptedFile, this, outputFilePath, hashes);
             }
             else
             {
-                encryption.encryptFileWithPadding(decryptedFile,this, outputFilePath, CONTENT_FILE_PADDING);
+                encryption.encryptFileWithPadding(decryptedFile, this, outputFilePath, CONTENT_FILE_PADDING);
             }
 
             return Path.GetFullPath(outputFilePath);
@@ -298,7 +299,7 @@ namespace CNUS_packer.contents
 
         private string packDecrypted()
         {
-            string tmp_path = settings.tmpDir + "/" + getID().ToString("00000000") + ".dec";
+            string tmp_path = settings.tmpDir + "/" + getID().ToString("X8") + ".dec";
             FileStream fos = null;
             try
             {
@@ -306,7 +307,8 @@ namespace CNUS_packer.contents
                 int totalCount = getFSTEntryNumber();
                 int cnt_file = 1;
                 long cur_offset = 0;
-                foreach(FSTEntry entry in getFSTEntries()){
+                foreach (FSTEntry entry in getFSTEntries())
+                {
                     if (!entry.isNotInPackage())
                     {
                         if (entry.isFile())
@@ -317,15 +319,16 @@ namespace CNUS_packer.contents
                             }
                             long old_offset = cur_offset;
                             cur_offset += utils.utils.align(entry.getFilesize(), ALIGNMENT_IN_CONTENT_FILE);
-                            string output = "["+cnt_file+"/"+totalCount+"] Writing at "+old_offset+" | FileSize: "+ entry.getFilesize() + " | "+ entry.getFilename()+"";
+                            string output = "[" + cnt_file + "/"+totalCount + "] Writing at " + old_offset + " | FileSize: " +  entry.getFilesize() + " | " + entry.getFilename();
+
                             utils.utils.copyFileInto(entry.getFile(), fos, output);
+
                             int padding = (int)(cur_offset - (old_offset + entry.getFilesize()));
                             fos.Write(new byte[padding]);
                         }
                         else
                         {
-                            Console.WriteLine("["+ cnt_file + "/"+totalCount+"] Wrote folder: \""+ entry.getFilename() + "\"");
-
+                            Console.WriteLine("[" + cnt_file + "/" + totalCount + "] Wrote folder: \"" + entry.getFilename() + "\"");
                         }
                     }
                     cnt_file++;
@@ -335,6 +338,7 @@ namespace CNUS_packer.contents
             {
                 fos.Close();
             }
+
             return Path.GetFullPath(tmp_path);
         }
 
