@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using CNUS_packer.contents;
@@ -60,6 +60,7 @@ namespace CNUS_packer.fst
                     result.AddRange(curEntry.getFSTEntriesByContent(content));
                 }
             }
+
             return result;
         }
 
@@ -70,6 +71,7 @@ namespace CNUS_packer.fst
             {
                 count += entry.getEntryCount();
             }
+
             return count;
         }
 
@@ -80,7 +82,8 @@ namespace CNUS_packer.fst
             {
                 buffer.Write(entry.getAsData());
             }
-            return buffer.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()
@@ -92,6 +95,7 @@ namespace CNUS_packer.fst
         {
             List<FSTEntry> entries = getEntries();
             if (entries.Count == 0) return null;
+
             return entries[0];
         }
 

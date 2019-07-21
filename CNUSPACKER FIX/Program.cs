@@ -1,4 +1,4 @@
-﻿using CNUS_packer.utils;
+using CNUS_packer.utils;
 using System;
 using System.IO;
 
@@ -200,24 +200,16 @@ namespace CNUS_packer
             string encryptPath = settings.encyptWithFile;
             if (!File.Exists(encryptPath)) return "";
             string key = "";
-            StreamReader input = null;
-            try
-            {
-                input = new StreamReader(encryptPath);
-                    key = input.ReadLine();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Failed to read \"" + settings.encyptWithFile + "\"");
-            }
-            finally
+            using (StreamReader input = new StreamReader(encryptPath))
             {
                 try
                 {
-                    input.Close();
+                    key = input.ReadLine();
                 }
                 catch (Exception e)
                 {
+                    Console.WriteLine("Failed to read \"" + settings.encyptWithFile + "\"");
+                    Console.WriteLine(e.ToString());
                 }
             }
 

@@ -1,4 +1,4 @@
-﻿namespace CNUS_packer.utils
+namespace CNUS_packer.utils
 {
     public class ByteArrayBuffer
     {

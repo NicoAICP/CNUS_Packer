@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -269,39 +269,57 @@ namespace CNUS_packer.fst
 
         public byte[] getAsData()
         {
-            MemoryStream ms = new MemoryStream(getDataSize());
-            BinaryWriter buffer = new BinaryWriter(ms);
+            MemoryStream buffer = new MemoryStream(getDataSize());
+            byte[] temp; // we need to write in big-endian, so we're gonna Array.Reverse a lot
             if (getIsRoot())
             {
-                buffer.Write((byte)1);
-                buffer.Write(new byte[0x07]);
-                buffer.Write(root_entryCount);
-                buffer.Write(new byte[0x04]);
+                buffer.WriteByte(1);
+                buffer.Seek(7, SeekOrigin.Current);
+                temp = BitConverter.GetBytes(root_entryCount);
+                Array.Reverse(temp);
+                buffer.Write(temp);
+                buffer.Seek(4, SeekOrigin.Current);
             }
             else
             {
-                buffer.Write(getType());
-                buffer.Write((byte)((nameOffset >> 16) & 0xFF));       //We need to write a 24bit int..
-                buffer.Write((short)((nameOffset) & 0xFFFF));
+                buffer.WriteByte(getType());
+                buffer.WriteByte((byte)((nameOffset >> 8) & 0xFF)); // We need to write a 24bit int
+                buffer.WriteByte((byte)((nameOffset >> 16) & 0xFF));
+                buffer.WriteByte((byte)((nameOffset >> 24) & 0xFF));
+
                 if (getIsDir())
                 {
-                    buffer.Write(parentOffset);
-                    buffer.Write(nextOffset);
-
+                    temp = BitConverter.GetBytes(parentOffset);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
+                    temp = BitConverter.GetBytes(nextOffset);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
                 }
                 else if (isFile())
                 {
-                    buffer.Write((int)(fileoffset >> 5));
-                    buffer.Write((int)filesize);
+                    temp = BitConverter.GetBytes((int)fileoffset >> 5);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
+                    temp = BitConverter.GetBytes((int)filesize);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
                 }
                 else if (isNotInPackage())
                 {
-                    buffer.Write(0);
-                    buffer.Write((int)filesize);
+                    buffer.Seek(4, SeekOrigin.Current);
+                    temp = BitConverter.GetBytes((int)filesize);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
                 }
-                buffer.Write(getFlags());
-                buffer.Write((short)content.getID());
+                temp = BitConverter.GetBytes(getFlags());
+                Array.Reverse(temp);
+                buffer.Write(temp);
+                temp = BitConverter.GetBytes((short)content.getID());
+                Array.Reverse(temp);
+                buffer.Write(temp);
             }
+
             if(children != null)
             {
                 foreach(FSTEntry entry in getChildren())
@@ -309,7 +327,8 @@ namespace CNUS_packer.fst
                     buffer.Write(entry.getAsData());
                 }
             }
-            return ms.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()
@@ -415,7 +434,7 @@ namespace CNUS_packer.fst
             this.nextOffset = nextOffset;
         }
 
-        public string toString()
+        public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             if (getIsDir()) sb.Append("DIR: ").Append("\n");
@@ -425,7 +444,7 @@ namespace CNUS_packer.fst
             if (getIsDir()) sb.Append("   NextID:").Append(nextOffset).Append("\n");
             foreach(FSTEntry e in getChildren())
             {
-                sb.Append(e.toString());
+                sb.Append(e.ToString());
             }
             return sb.ToString();
         }
@@ -550,7 +569,7 @@ namespace CNUS_packer.fst
 
         public void calculateDecryptedHash()
         {
-            decryptedSHA1 = utils.HashUtil.hashSHA1(filepath, 0x8000);
+            decryptedSHA1 = utils.HashUtil.hashSHA1(new FileInfo(filepath), 0x8000);
         }
 
         public void setFlags(short flags)

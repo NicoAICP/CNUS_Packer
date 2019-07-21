@@ -1,4 +1,3 @@
-﻿
 using System;
 using System.IO;
 
@@ -16,7 +15,7 @@ namespace CNUS_packer.contents
 
         public void setContentInfo(int index, ContentInfo contentInfo)
         {
-            if (index < 0 && index > (contentinfos.Length - 1))
+            if (index < 0 || index >= contentinfos.Length)
             {
                 throw new Exception("Error on setting ContentInfo, index " + index + " invalid");
             }
@@ -29,7 +28,7 @@ namespace CNUS_packer.contents
 
         public ContentInfo getContentInfo(int index)
         {
-            if (index < 0 && index > (contentinfos.Length - 1))
+            if (index < 0 || index >= contentinfos.Length)
             {
                 throw new Exception("Error on getting ContentInfo, index " + index + " invalid");
             }
@@ -43,12 +42,13 @@ namespace CNUS_packer.contents
         public byte[] getAsData()
         {
             MemoryStream buffer = new MemoryStream(ContentInfo.getDataSizeStatic() * contentinfos.Length);
-            for (int i = 0; i < contentinfos.Length - 1; i++)
+            for (int i = 0; i < contentinfos.Length; i++)
             {
                 if (contentinfos[i] == null) contentinfos[i] = new ContentInfo();
                 buffer.Write(contentinfos[i].getAsData());
             }
-            return buffer.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()

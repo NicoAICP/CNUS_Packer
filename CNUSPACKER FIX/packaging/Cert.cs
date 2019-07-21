@@ -1,4 +1,3 @@
-﻿
 using System.IO;
 
 namespace CNUS_packer.packaging
@@ -7,12 +6,13 @@ namespace CNUS_packer.packaging
     {
         public static byte[] getCertAsData()
         {
-            MemoryStream ms = new MemoryStream(0xA00);
+            MemoryStream buffer = new MemoryStream(0xA00);
 
-            BinaryWriter buffer = new BinaryWriter(ms);
-            buffer.Write(0x010003);
-            buffer.Write(0x010004);
-            buffer.Write(0x010004);
+            buffer.Write(utils.utils.HexStringToByteArray("00010003"));
+            buffer.Seek(0x400, SeekOrigin.Begin);
+            buffer.Write(utils.utils.HexStringToByteArray("00010004"));
+            buffer.Seek(0x700, SeekOrigin.Begin);
+            buffer.Write(utils.utils.HexStringToByteArray("00010004"));
 
             buffer.Seek(0x240, SeekOrigin.Begin);
             buffer.Write(utils.utils.HexStringToByteArray("526F6F74000000000000000000000000"));
@@ -30,8 +30,7 @@ namespace CNUS_packer.packaging
             buffer.Seek(0x880, SeekOrigin.Begin);
             buffer.Write(utils.utils.HexStringToByteArray("00000001585330303030303030630000"));
 
-
-            return ms.ToArray();
+            return buffer.GetBuffer();
         }
        /* public static byte[] getTMDCertAsData()
         {

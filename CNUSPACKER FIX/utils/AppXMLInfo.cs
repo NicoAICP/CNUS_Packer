@@ -1,4 +1,3 @@
-﻿
 namespace CNUS_packer.utils
 {
     public class AppXMLInfo
@@ -107,7 +106,7 @@ namespace CNUS_packer.utils
             common_id = value;
         }
 
-        public string toString()
+        public override string ToString()
         {
             return "AppXMLInfo [version=" + version + ", OSVersion=" + osVersion + ", titleID=" + titleID
                 + ", titleVersion=" + titleVersion + ", SDKVersion=" + sdkVersion + ", appType=" + appType

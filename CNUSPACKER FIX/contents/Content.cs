@@ -1,4 +1,4 @@
-﻿using CNUS_packer.crypto;
+using CNUS_packer.crypto;
 using CNUS_packer.fst;
 using CNUS_packer.packaging;
 using CNUS_packer.utils;
@@ -48,9 +48,9 @@ namespace CNUS_packer.contents
             return this.ID;
         }
 
-        public void setID(int id)
+        public void setID(int ID)
         {
-            this.ID = id;
+            this.ID = ID;
         }
 
         public short getType()
@@ -162,15 +162,14 @@ namespace CNUS_packer.contents
         {
             return 32;
         }
+
         public Pair<byte[],long> getFSTContentHeaderAsData(long old_content_offset)
         {
-            MemoryStream ms = new MemoryStream(getFSTContentHeaderDataSize());
-            BinaryWriter buffer = new BinaryWriter(ms);
-
+            MemoryStream buffer = new MemoryStream(getFSTContentHeaderDataSize());
 
             byte unkwn = 0;
             long content_offset = old_content_offset;
-            long fst_content_size = (getEncryptedFileSize() / Content.CONTENT_FILE_PADDING);
+            long fst_content_size = getEncryptedFileSize() / CONTENT_FILE_PADDING;
             long fst_content_size_written = fst_content_size;
 
             if (isHashed())
@@ -178,12 +177,12 @@ namespace CNUS_packer.contents
                 unkwn = 2;
                 fst_content_size_written -= ((fst_content_size / 64) + 1) * 2;
                 if (fst_content_size_written < 0) fst_content_size_written = 0;
-
             }
             else
             {
                 unkwn = 1;
             }
+
             if (getIsFSTContent())
             {
                 unkwn = 0;
@@ -192,22 +191,34 @@ namespace CNUS_packer.contents
                     fst_content_size = 0;
                 }
                 content_offset += fst_content_size + 2;
-                fst_content_size = 0;
             }
             else
             {
                 content_offset += fst_content_size;
             }
 
-            buffer.Write((int)old_content_offset);
-            buffer.Write((int)fst_content_size_written);
-            buffer.Write(getParentTitleID());
+            // we need to write with big endian, so we'll Array.Reverse a lot
+            byte[] temp;
 
-            buffer.Write(getGroupID());
+            temp = BitConverter.GetBytes((int)old_content_offset);
+            Array.Reverse(temp);
+            buffer.Write(temp);
 
-            buffer.Write(unkwn);
+            temp = BitConverter.GetBytes((int)fst_content_size_written);
+            Array.Reverse(temp);
+            buffer.Write(temp);
 
-            return new Pair<byte[], long>(ms.ToArray(), content_offset);
+            temp = BitConverter.GetBytes(getParentTitleID());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+
+            temp = BitConverter.GetBytes(getGroupID());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+
+            buffer.WriteByte(unkwn);
+
+            return new Pair<byte[], long>(buffer.GetBuffer(), content_offset);
         }
 
         public long getOffsetForFileAndIncrease(FSTEntry fstEntry)
@@ -234,14 +245,33 @@ namespace CNUS_packer.contents
 
         public byte[] getAsData()
         {
-            MemoryStream bf_strm = new MemoryStream(getDataSize());
-            BinaryWriter buffer = new BinaryWriter(bf_strm);
-            buffer.Write(getID());
-            buffer.Write(getIndex());
-            buffer.Write(getType());
-            buffer.Write(getEncryptedFileSize());
+            MemoryStream buffer = new MemoryStream(getDataSize());
+
+            // We need to write in big endian, so we're gonna Array.Reverse a lot
+            byte[] temp;
+
+            temp = BitConverter.GetBytes(getID());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+
+            temp = BitConverter.GetBytes(getIndex());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+
+            temp = BitConverter.GetBytes(getType());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+
+            temp = BitConverter.GetBytes(getEncryptedFileSize());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+
             buffer.Write(getHash());
-            return bf_strm.ToArray();
+
+            Console.WriteLine("all: " + getID() + ", " + getIndex() + ", " + getType() + ", " + getEncryptedFileSize() + ", " + System.Text.Encoding.Default.GetString(getHash()));
+            Console.WriteLine("Content.getAsData(): " + System.Text.Encoding.Default.GetString(buffer.GetBuffer()));
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()
@@ -257,7 +287,7 @@ namespace CNUS_packer.contents
             Encryption encryption = nusPackage.getEncryption();
             Console.WriteLine("Packing files into one file:");
             //At first we need to create the decrypted file.
-            string decryptedFile = packDecrypted();
+            FileInfo decryptedFile = packDecrypted();
 
             Console.WriteLine();
             Console.WriteLine("Generate hashes:");
@@ -266,13 +296,13 @@ namespace CNUS_packer.contents
 
             ContentHashes contentHashes = new ContentHashes(decryptedFile, isHashed());
 
-            string h3_path = outputDir + "/" + getID().ToString("X8") + ".h3";
+            string h3_path = Path.Combine(outputDir, getID().ToString("X8") + ".h3");
 
             contentHashes.saveH3ToFile(h3_path);
             setHash(contentHashes.getTMDHash());
             Console.WriteLine();
-            Console.WriteLine("Encrypt content (" + getID().ToString("X8") +")");
-            string encryptedFile = packEncrypted(outputDir, decryptedFile, contentHashes, encryption);
+            Console.WriteLine("Encrypt content (" + getID().ToString("X8") + ")");
+            FileInfo encryptedFile = packEncrypted(outputDir, decryptedFile, contentHashes, encryption);
 
             setEncryptedFileSize(encryptedFile.Length);
 
@@ -281,12 +311,11 @@ namespace CNUS_packer.contents
             Console.WriteLine("-------------");
         }
 
-        private string packEncrypted(string outputDir, string decryptedFile, ContentHashes hashes, Encryption encryption)
+        private FileInfo packEncrypted(string outputDir, FileInfo decryptedFile, ContentHashes hashes, Encryption encryption)
         {
-            string outputFilePath = outputDir + "/" + getID().ToString("X8") + ".app";
+            string outputFilePath = Path.Combine(outputDir, getID().ToString("X8") + ".app");
             if((getType() & TYPE_HASHED) == TYPE_HASHED)
             {
-                Console.WriteLine("hI");
                 encryption.encryptFileHashed(decryptedFile, this, outputFilePath, hashes);
             }
             else
@@ -294,16 +323,14 @@ namespace CNUS_packer.contents
                 encryption.encryptFileWithPadding(decryptedFile, this, outputFilePath, CONTENT_FILE_PADDING);
             }
 
-            return Path.GetFullPath(outputFilePath);
+            return new FileInfo(Path.GetFullPath(outputFilePath));
         }
 
-        private string packDecrypted()
+        private FileInfo packDecrypted()
         {
-            string tmp_path = settings.tmpDir + "/" + getID().ToString("X8") + ".dec";
-            FileStream fos = null;
-            try
+            string tmp_path = Path.Combine(settings.tmpDir, getID().ToString("X8") + ".dec");
+            using (FileStream fos = new FileStream(tmp_path, FileMode.Create))
             {
-                fos = new FileStream(tmp_path, FileMode.Create);
                 int totalCount = getFSTEntryNumber();
                 int cnt_file = 1;
                 long cur_offset = 0;
@@ -313,13 +340,13 @@ namespace CNUS_packer.contents
                     {
                         if (entry.isFile())
                         {
-                            if(cur_offset != entry.getFileOffset())
+                            if (cur_offset != entry.getFileOffset())
                             {
                                 Console.WriteLine("FAILED");
                             }
                             long old_offset = cur_offset;
                             cur_offset += utils.utils.align(entry.getFilesize(), ALIGNMENT_IN_CONTENT_FILE);
-                            string output = "[" + cnt_file + "/"+totalCount + "] Writing at " + old_offset + " | FileSize: " +  entry.getFilesize() + " | " + entry.getFilename();
+                            string output = "[" + cnt_file + "/" + totalCount + "] Writing at " + old_offset + " | FileSize: " + entry.getFilesize() + " | " + entry.getFilename();
 
                             utils.utils.copyFileInto(entry.getFile(), fos, output);
 
@@ -334,12 +361,8 @@ namespace CNUS_packer.contents
                     cnt_file++;
                 }
             }
-            finally
-            {
-                fos.Close();
-            }
 
-            return Path.GetFullPath(tmp_path);
+            return new FileInfo(Path.GetFullPath(tmp_path));
         }
 
         public void update(List<FSTEntry> entries)

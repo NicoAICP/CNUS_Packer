@@ -1,4 +1,3 @@
-﻿
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -29,36 +28,30 @@ namespace CNUS_packer.utils
             byte[] returning;
 
             try
-             {
+            {
                 returning = sha1.ComputeHash(data);
             }
-             catch (Exception e)
-             {
-
-                 returning = new byte[0x14];
-             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                returning = new byte[0x14];
+            }
 
             return returning;
         }
 
-        public static byte[] hashSHA1(string filepath)
+        public static byte[] hashSHA1(FileInfo file)
         {
-            return hashSHA1(filepath, 0);
+            return hashSHA1(file, 0);
         }
 
-        public static byte[] hashSHA1(string filepath, int alignment)
+        public static byte[] hashSHA1(FileInfo file, int alignment)
         {
             byte[] hash = new byte[0x14];
             SHA1 sha1 = SHA1.Create();
-            try
+            using (FileStream fs = file.Open(FileMode.Open))
             {
-                FileStream fs = File.Open(filepath, FileMode.Open);
-
                 hash = Hash(sha1, fs, fs.Length, 0x8000, alignment);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
             }
 
             return hash;
@@ -75,6 +68,7 @@ namespace CNUS_packer.utils
             }
             return dest;
         }
+
         public static byte[] Hash(SHA1 digest, FileStream fs, long inputSize, int bufferSize, int alignment)
         {
             long target_size = alignment == 0 ? inputSize : utils.align(inputSize, alignment);
@@ -97,7 +91,7 @@ namespace CNUS_packer.utils
 
                     buffer.Write(copyOfRange(blockBuffer, 0, inBlockBufferRead));
 
-                    blockBuffer = buffer.ToArray();
+                    blockBuffer = buffer.GetBuffer();
                     check = (int)expectedSize;
                     inBlockBufferRead = bufferSize;
                 }
@@ -113,7 +107,6 @@ namespace CNUS_packer.utils
                 cur_position += inBlockBufferRead;
             } while (cur_position < target_size && (inBlockBufferRead == bufferSize));
 
-            fs.Close();
             return digest.ComputeHash(blockBuffer, 0, check);
         }
     }

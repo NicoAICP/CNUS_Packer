@@ -1,4 +1,4 @@
-﻿using CNUS_packer.contents;
+using CNUS_packer.contents;
 using CNUS_packer.fst;
 
 using System;

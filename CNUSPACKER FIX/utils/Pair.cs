@@ -1,11 +1,11 @@
-﻿namespace CNUS_packer.utils
+namespace CNUS_packer.utils
 {
     public class Pair<T, K>
     {
         private T key;
         private K value;
 
-        public  Pair(T key, K value)
+        public Pair(T key, K value)
         {
             setKey(key);
             setValue(value);

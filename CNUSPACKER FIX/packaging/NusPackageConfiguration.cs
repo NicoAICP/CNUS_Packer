@@ -1,4 +1,4 @@
-﻿using CNUS_packer.crypto;
+using CNUS_packer.crypto;
 using CNUS_packer.utils;
 using System;
 

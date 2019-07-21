@@ -1,4 +1,4 @@
-﻿using CNUS_packer.crypto;
+using CNUS_packer.crypto;
 using CNUS_packer.fst;
 using CNUS_packer.packaging;
 using CNUS_packer.utils;
@@ -82,7 +82,8 @@ namespace CNUS_packer.contents
             {
                 buffer.Write(c.getAsData());
             }
-            return buffer.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()
@@ -105,7 +106,8 @@ namespace CNUS_packer.contents
                 buffer.Write(result.getKey());
                 content_offset = result.getValue();
             }
-            return buffer.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getFSTContentHeaderDataSize()
@@ -155,9 +157,11 @@ namespace CNUS_packer.contents
             }
             NUSpackage nuspackage = NUSPackageFactory.getPackageByContents(this);
             Encryption encryption = nuspackage.getEncryption();
+
             Console.WriteLine("Packing the FST into " + fstContent.getID().ToString("X8") + ".app");
-            string fst_path = outputDir + "/" + fstContent.getID().ToString("X8")+".app";
+            string fst_path = Path.Combine(outputDir, fstContent.getID().ToString("X8") + ".app");
             encryption.encryptFileWithPadding(nuspackage.getFST(), fst_path, (short)getFSTContent().getID(), Content.CONTENT_FILE_PADDING);
+
             Console.WriteLine("-------------");
             Console.WriteLine("Packed all contents\n\n");
         }

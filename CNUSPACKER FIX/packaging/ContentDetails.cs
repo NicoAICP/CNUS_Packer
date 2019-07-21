@@ -1,4 +1,4 @@
-﻿namespace CNUS_packer.packaging
+namespace CNUS_packer.packaging
 {
     public class ContentDetails
     {
@@ -77,7 +77,8 @@
         {
             this.entriesFlag = entriesFlag;
         }
-        public string toString()
+
+        public override string ToString()
         {
             return "ContentDetails [isContent=" + isContent + ", isEncrypted=" + isEncrypted + ", isHashed=" + isHashed
                 + ", groupID=" + groupID + ", parentTitleID=" + parentTitleID + ", entriesFlag=" + entriesFlag + "]";

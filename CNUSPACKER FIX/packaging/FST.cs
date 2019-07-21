@@ -1,8 +1,9 @@
-﻿using CNUS_packer.contents;
+using CNUS_packer.contents;
 using CNUS_packer.fst;
 
 using System.IO;
 using System.Text;
+using System;
 
 namespace CNUS_packer.packaging
 {
@@ -66,17 +67,23 @@ namespace CNUS_packer.packaging
 
         public byte[] getAsData()
         {
-            MemoryStream stream = new MemoryStream(getDataSize());
-            BinaryWriter buffer = new BinaryWriter(stream);
+            MemoryStream buffer = new MemoryStream(getDataSize());
+            byte[] temp;
+
             buffer.Write(magicbytes);
-            buffer.Write(unknown);
-            buffer.Write(contentCount);
+            temp = BitConverter.GetBytes(unknown);
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(contentCount);
+            Array.Reverse(temp);
+            buffer.Write(temp);
             buffer.Write(padding);
             buffer.Write(contents.getFSTContentHeaderAsData());
             buffer.Write(fileEntries.getAsData());
-            buffer.Write(copyOfRange(strings.ToArray(), 0, (int)strings.Position));
+            buffer.Write(copyOfRange(strings.GetBuffer(), 0, (int)strings.Position));
             buffer.Write(alignment);
-            return stream.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()

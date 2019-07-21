@@ -1,4 +1,4 @@
-﻿using CNUS_packer.contents;
+using CNUS_packer.contents;
 using CNUS_packer.fst;
 
 using System;
@@ -49,6 +49,7 @@ namespace CNUS_packer.packaging
             fst.update();
             Console.WriteLine("Generating the Ticket");
             Ticket ticket = new Ticket(config.getAppInfo().GetTitleID(), config.getEncryptionKey(), config.getEncryptKeyWith());
+            Console.WriteLine("tickets key stuff: " + ticket.getDecryptedKey() + ", " + ticket.getEncryptWith());
             Console.WriteLine("Generating the TMD");
             TMD tmd = new TMD(config.getAppInfo(), fst, ticket);
             tmd.update();

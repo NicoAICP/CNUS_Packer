@@ -1,4 +1,4 @@
-﻿namespace CNUS_packer.crypto
+namespace CNUS_packer.crypto
 {
     public class Key
     {
@@ -16,6 +16,7 @@
 
         public Key(string s) : this(utils.utils.HexStringToByteArray(s))
         {
+            System.Console.WriteLine("was called for string " + s);
         }
 
         public byte[] getKey()
@@ -36,9 +37,9 @@
             return LENGTH;
         }
 
-        public string toString()
+        public override string ToString()
         {
-            return utils.utils.ByteArraytoString(key);
+            return System.Text.Encoding.Default.GetString(key);
         }
     }
 }

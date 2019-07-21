@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using CNUS_packer.contents;
@@ -71,7 +71,7 @@ namespace CNUS_packer.packaging
 
         public void packContents(string outputDir)
         {
-            if (outputDir != null && !IsDirectoryEmpty(outputDir))
+            if (outputDir != null)
             {
                 setOutputdir(outputDir);
             }
@@ -82,7 +82,7 @@ namespace CNUS_packer.packaging
             }
             catch (Exception e1)
             {
-                Console.WriteLine(e1.Message);
+                Console.WriteLine(e1.ToString());
             }
             Content fstContent = getContents().getFSTContent();
             fstContent.setHash(utils.HashUtil.hashSHA2(getContents().getAsData()));
@@ -96,25 +96,29 @@ namespace CNUS_packer.packaging
                 fos.write(fst.getAsData());
                 fos.close();*/
 
-                FileStream fos = new FileStream(getOutputdir() + "/title.tmd", FileMode.OpenOrCreate);
-                fos.Write(tmd.getAsData());
-                fos.Close();
-                Console.WriteLine("TMD saved to    " + getOutputdir() + "/title.tmd");
+                FileStream fos;
+                using (fos = new FileStream(Path.Combine(getOutputdir(), "title.tmd"), FileMode.OpenOrCreate))
+                {
+                    fos.Write(tmd.getAsData());
+                }
+                Console.WriteLine("TMD saved to    " + Path.Combine(getOutputdir(), "title.tmd"));
 
-                fos = new FileStream(getOutputdir() + "/title.cert", FileMode.OpenOrCreate);
-                fos.Write(Cert.getCertAsData());
-                fos.Close();
-                Console.WriteLine("Cert saved to   " + getOutputdir() + "/title.cert");
+                using (fos = new FileStream(Path.Combine(getOutputdir(), "title.cert"), FileMode.OpenOrCreate))
+                {
+                    fos.Write(Cert.getCertAsData());
+                }
+                Console.WriteLine("Cert saved to   " + Path.Combine(getOutputdir(), "title.cert"));
 
-                fos = new FileStream(getOutputdir() + "/title.tik", FileMode.OpenOrCreate);
-                fos.Write(ticket.getAsData());
-                fos.Close();
-                Console.WriteLine("Ticket saved to " + getOutputdir() + "/title.tik");
+                using (fos = new FileStream(Path.Combine(getOutputdir(), "title.tik"), FileMode.OpenOrCreate))
+                {
+                    fos.Write(ticket.getAsData());
+                }
+                Console.WriteLine("Ticket saved to " + Path.Combine(getOutputdir(), "title.tik"));
                 Console.WriteLine();
             }
             catch (IOException e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e.ToString());
             }
         }
 

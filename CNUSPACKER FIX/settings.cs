@@ -1,4 +1,4 @@
-﻿namespace CNUS_packer
+namespace CNUS_packer
 {
     public class settings
     {

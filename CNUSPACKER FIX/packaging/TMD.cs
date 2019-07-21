@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using CNUS_packer.contents;
 using CNUS_packer.crypto;
 
@@ -65,9 +65,8 @@ namespace CNUS_packer.packaging
         void WriteIssues()
         {
             issuer_stream.Write(utils.utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000"));
-            this.issuer = issuer_stream.ToArray();
+            this.issuer = issuer_stream.GetBuffer();
         }
-
 
         public void update()
         {
@@ -83,7 +82,7 @@ namespace CNUS_packer.packaging
             Random rnd = new Random();
             rnd.NextBytes(randomHash);
 
-            firstContentInfo.setSHA2Hash(utils.HashUtil.hashSHA2(contents.getAsData()));
+            firstContentInfo.setSHA2Hash(HashUtil.hashSHA2(contents.getAsData()));
             getContentInfos().setContentInfo(0, firstContentInfo);
         }
 
@@ -94,30 +93,55 @@ namespace CNUS_packer.packaging
 
         public byte[] getAsData()
         {
-            MemoryStream bf_strm =  new MemoryStream(getDataSize());
-            BinaryWriter buffer = new BinaryWriter(bf_strm);
-            buffer.Write(signatureType);
+            MemoryStream buffer = new MemoryStream(getDataSize());
+            byte[] temp;
+
+            temp = BitConverter.GetBytes(signatureType);
+            Array.Reverse(temp);
+            buffer.Write(temp);
             buffer.Write(signature);
             buffer.Write(padding0);
             buffer.Write(issuer);
 
-            buffer.Write(version);
-            buffer.Write(CACRLVersion);
-            buffer.Write(signerCRLVersion);
-            buffer.Write(padding1);
+            buffer.WriteByte(version);
+            buffer.WriteByte(CACRLVersion);
+            buffer.WriteByte(signerCRLVersion);
+            buffer.WriteByte(padding1);
 
-            buffer.Write(getSystemVersion());
-            buffer.Write(getTicket().getTitleID());
-            buffer.Write(titleType);
-            buffer.Write(getGroupID());
-            buffer.Write((int)getAppType());
-            buffer.Write(random1);
-            buffer.Write(random2);
+            temp = BitConverter.GetBytes(getSystemVersion());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(getTicket().getTitleID());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(titleType);
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(getGroupID());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes((int)getAppType());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(random1);
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(random2);
+            Array.Reverse(temp);
+            buffer.Write(temp);
             buffer.Write(reserved);
-            buffer.Write(accessRights);
-            buffer.Write(getTitleVersion());
-            buffer.Write(contentCount);
-            buffer.Write(bootIndex);
+            temp = BitConverter.GetBytes(accessRights);
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(getTitleVersion());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(contentCount);
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(bootIndex);
+            Array.Reverse(temp);
+            buffer.Write(temp);
 
             buffer.Write(padding3);
             buffer.Write(SHA2);
@@ -125,7 +149,8 @@ namespace CNUS_packer.packaging
             buffer.Write(getContentInfos().getAsData());
             buffer.Write(getContents().getAsData());
             //buffer.put(certs); not needed
-            return bf_strm.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()
@@ -172,11 +197,12 @@ namespace CNUS_packer.packaging
 
         public Encryption getEncryption()
         {
-            MemoryStream iv_strm = new MemoryStream(0x10);
-            BinaryWriter iv = new BinaryWriter(iv_strm);
-            iv.Write(getTicket().getTitleID());
+            MemoryStream iv_buffer = new MemoryStream(0x10);
+            byte[] temps = BitConverter.GetBytes(getTicket().getTitleID());
+            Array.Reverse(temps);
+            iv_buffer.Write(temps);
             Key key = getTicket().getDecryptedKey();
-            return new Encryption(key, new IV(iv_strm.ToArray()));
+            return new Encryption(key, new IV(iv_buffer.GetBuffer()));
         }
 
         public long getSystemVersion()
