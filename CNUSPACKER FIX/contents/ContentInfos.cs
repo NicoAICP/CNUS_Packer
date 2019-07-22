@@ -5,7 +5,7 @@ namespace CNUS_packer.contents
 {
     public class ContentInfos
     {
-        private static int contentInfoCount = 0x40;
+        private const int contentInfoCount = 0x40;
 
         private ContentInfo[] contentinfos = new ContentInfo[contentInfoCount];
 
@@ -19,11 +19,8 @@ namespace CNUS_packer.contents
             {
                 throw new Exception("Error on setting ContentInfo, index " + index + " invalid");
             }
-            if (contentInfo == null)
-            {
-                throw new Exception("Error on setting ContentInfo, ContentInfo is null");
-            }
-            contentinfos[index] = contentInfo;
+
+            contentinfos[index] = contentInfo ?? throw new Exception("Error on setting ContentInfo, ContentInfo is null.");
         }
 
         public ContentInfo getContentInfo(int index)

@@ -1,4 +1,5 @@
 using CNUS_packer.crypto;
+using CNUS_packer.utils;
 
 using System;
 using System.IO;
@@ -22,16 +23,16 @@ namespace CNUS_packer.packaging
         {
             Random rdm = new Random();
             MemoryStream buffer = new MemoryStream(0x350);
-            buffer.Write(utils.utils.HexStringToByteArray("00010004"));
+            buffer.Write(Utils.HexStringToByteArray("00010004"));
             byte[] randomData = new byte[0x100];
             rdm.NextBytes(randomData);
             buffer.Write(randomData);
             buffer.Seek(0x3C, SeekOrigin.Current);
-            buffer.Write(utils.utils.HexStringToByteArray("526F6F742D434130303030303030332D58533030303030303063000000000000"));
+            buffer.Write(Utils.HexStringToByteArray("526F6F742D434130303030303030332D58533030303030303063000000000000"));
             buffer.Seek(0x5C, SeekOrigin.Current);
-            buffer.Write(utils.utils.HexStringToByteArray("010000"));
+            buffer.Write(Utils.HexStringToByteArray("010000"));
             buffer.Write(getEncryptedKey().getKey());
-            buffer.Write(utils.utils.HexStringToByteArray("000005"));
+            buffer.Write(Utils.HexStringToByteArray("000005"));
             randomData = new byte[0x06];
             rdm.NextBytes(randomData);
             buffer.Write(randomData);
@@ -39,9 +40,9 @@ namespace CNUS_packer.packaging
             byte[] temp = BitConverter.GetBytes(getTitleID());
             Array.Reverse(temp);
             buffer.Write(temp);
-            buffer.Write(utils.utils.HexStringToByteArray("00000011000000000000000000000005"));
+            buffer.Write(Utils.HexStringToByteArray("00000011000000000000000000000005"));
             buffer.Seek(0xB0, SeekOrigin.Current);
-            buffer.Write(utils.utils.HexStringToByteArray("00010014000000AC000000140001001400000000000000280000000100000084000000840003000000000000FFFFFF01"));
+            buffer.Write(Utils.HexStringToByteArray("00010014000000AC000000140001001400000000000000280000000100000084000000840003000000000000FFFFFF01"));
             buffer.Seek(0x7C, SeekOrigin.Current);
 
             return buffer.GetBuffer();

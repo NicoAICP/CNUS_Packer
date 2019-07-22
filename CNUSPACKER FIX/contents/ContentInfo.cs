@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 
 namespace CNUS_packer.contents
 {
@@ -7,7 +7,7 @@ namespace CNUS_packer.contents
     {
         private short indexOffset = 0x00;
         private short commandCount = 0x0B;
-        private byte[] SHA2hash = new byte[0x20];
+        private byte[] SHA2hash = null;
 
         public ContentInfo() : this(0)
         {

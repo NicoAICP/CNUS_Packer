@@ -1,9 +1,9 @@
-using System;
 using CNUS_packer.contents;
 using CNUS_packer.crypto;
-
-using System.IO;
 using CNUS_packer.utils;
+
+using System;
+using System.IO;
 
 namespace CNUS_packer.packaging
 {
@@ -64,7 +64,7 @@ namespace CNUS_packer.packaging
 
         void WriteIssues()
         {
-            issuer_stream.Write(utils.utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000"));
+            issuer_stream.Write(Utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000"));
             this.issuer = issuer_stream.GetBuffer();
         }
 
@@ -78,10 +78,8 @@ namespace CNUS_packer.packaging
             this.contentCount = contents.getContentCount();
 
             ContentInfo firstContentInfo = new ContentInfo(contents.getContentCount());
-            byte[] randomHash = new byte[0x20];
-            Random rnd = new Random();
-            rnd.NextBytes(randomHash);
 
+            Console.WriteLine("hi :3");
             firstContentInfo.setSHA2Hash(HashUtil.hashSHA2(contents.getAsData()));
             getContentInfos().setContentInfo(0, firstContentInfo);
         }
@@ -147,8 +145,8 @@ namespace CNUS_packer.packaging
             buffer.Write(SHA2);
 
             buffer.Write(getContentInfos().getAsData());
+            Console.WriteLine("Watch out!");
             buffer.Write(getContents().getAsData());
-            //buffer.put(certs); not needed
 
             return buffer.GetBuffer();
         }
@@ -158,8 +156,8 @@ namespace CNUS_packer.packaging
             int staticSize = 0x204;
             int contentInfoSize = contentInfos.getDataSize();
             int contentsSize = contents.getDataSize();
-            //int certSize = certs.length;
-            return staticSize + contentInfoSize + contentsSize;// + certSize;
+
+            return staticSize + contentInfoSize + contentsSize;
         }
 
         public ContentInfos getContentInfos()
@@ -168,6 +166,7 @@ namespace CNUS_packer.packaging
             {
                 contentInfos = new ContentInfos();
             }
+
             return contentInfos;
         }
 
@@ -182,6 +181,7 @@ namespace CNUS_packer.packaging
             {
                 contents = new Contents();
             }
+
             return contents;
         }
 
@@ -198,10 +198,11 @@ namespace CNUS_packer.packaging
         public Encryption getEncryption()
         {
             MemoryStream iv_buffer = new MemoryStream(0x10);
-            byte[] temps = BitConverter.GetBytes(getTicket().getTitleID());
-            Array.Reverse(temps);
-            iv_buffer.Write(temps);
+            byte[] temp = BitConverter.GetBytes(getTicket().getTitleID());
+            Array.Reverse(temp);
+            iv_buffer.Write(temp);
             Key key = getTicket().getDecryptedKey();
+
             return new Encryption(key, new IV(iv_buffer.GetBuffer()));
         }
 

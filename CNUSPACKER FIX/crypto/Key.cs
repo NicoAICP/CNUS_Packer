@@ -1,3 +1,5 @@
+using CNUS_packer.utils;
+
 namespace CNUS_packer.crypto
 {
     public class Key
@@ -14,9 +16,8 @@ namespace CNUS_packer.crypto
             setKey(key);
         }
 
-        public Key(string s) : this(utils.utils.HexStringToByteArray(s))
+        public Key(string s) : this(Utils.HexStringToByteArray(s))
         {
-            System.Console.WriteLine("was called for string " + s);
         }
 
         public byte[] getKey()
@@ -26,20 +27,15 @@ namespace CNUS_packer.crypto
 
         public void setKey(byte[] key)
         {
-            if (key != null && key.Length == getKey().Length)
+            if (key != null && key.Length == LENGTH)
             {
                 this.key = key;
             }
         }
 
-        public int getLength()
-        {
-            return LENGTH;
-        }
-
         public override string ToString()
         {
-            return System.Text.Encoding.Default.GetString(key);
+            return Utils.ByteArrayToHexString(key);
         }
     }
 }

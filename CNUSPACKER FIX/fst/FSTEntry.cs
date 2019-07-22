@@ -1,8 +1,9 @@
+using CNUS_packer.contents;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using CNUS_packer.contents;
 
 
 namespace CNUS_packer.fst
@@ -52,40 +53,13 @@ namespace CNUS_packer.fst
 
         private bool notInPackage = false;
 
-        /* public FSTEntry(File file) : this(file, false)
-        {
-
-        }*/
         public FSTEntry(string filepath) : this(filepath, false)
         {
 
         }
-        /* public FSTEntry(File file, bool notInPackage)
-        {
-            if(file == null || !file.exists())
-            {
-                throw new Exception("Couldn't create FSTEntry, file is null or doesn't exists");
-
-            }
-            this.file = new File(file.getAbsolutePath());
-            setDir(file.isDirectory());
-            setFileName(file.getName());
-            setFileSize(file.length());
-
-            setNotInPackage(notInPackage);
-
-            if (isFile())
-            {
-                decryptedSHA1 = null;
-            }
-        }*/
 
         public FSTEntry(string filepath, bool notInPackage)
         {
-            //if(filepath == null || !System.IO.File.Exists(filepath) || !Directory.Exists(filepath))
-            //{
-            //    throw new Exception("Could not create FSTEntry, File is null or it doesnt exist");
-            //}
             this.filepath = Path.GetFullPath(filepath);
             setDir(Directory.Exists(filepath));
             setFileName(Path.GetFileName(filepath));
@@ -283,9 +257,9 @@ namespace CNUS_packer.fst
             else
             {
                 buffer.WriteByte(getType());
-                buffer.WriteByte((byte)((nameOffset >> 8) & 0xFF)); // We need to write a 24bit int
-                buffer.WriteByte((byte)((nameOffset >> 16) & 0xFF));
-                buffer.WriteByte((byte)((nameOffset >> 24) & 0xFF));
+                buffer.WriteByte((byte)((nameOffset >> 16) & 0xFF)); // We need to write a 24bit int
+                buffer.WriteByte((byte)((nameOffset >> 8) & 0xFF));
+                buffer.WriteByte((byte)(nameOffset & 0xFF));
 
                 if (getIsDir())
                 {
@@ -298,7 +272,7 @@ namespace CNUS_packer.fst
                 }
                 else if (isFile())
                 {
-                    temp = BitConverter.GetBytes((int)fileoffset >> 5);
+                    temp = BitConverter.GetBytes((int)(fileoffset >> 5));
                     Array.Reverse(temp);
                     buffer.Write(temp);
                     temp = BitConverter.GetBytes((int)filesize);
@@ -315,7 +289,7 @@ namespace CNUS_packer.fst
                 temp = BitConverter.GetBytes(getFlags());
                 Array.Reverse(temp);
                 buffer.Write(temp);
-                temp = BitConverter.GetBytes((short)content.getID());
+                temp = BitConverter.GetBytes((short)content.ID);
                 Array.Reverse(temp);
                 buffer.Write(temp);
             }
@@ -366,16 +340,18 @@ namespace CNUS_packer.fst
             setEntryOffset(packaging.FST.curEntryOffset);
             packaging.FST.curEntryOffset++;
 
-            if(getIsDir() && !getIsRoot())
+            if (getIsDir() && !getIsRoot())
             {
                 setParentOffset(getParent().getEntryOffset());
             }
-            if(getContent() != null && isFile())
+
+            if (getContent() != null && isFile())
             {
                 long fileoffset = getContent().getOffsetForFileAndIncrease(this);
                 setFileOffset(fileoffset);
             }
-            foreach(FSTEntry entry in getChildren())
+
+            foreach (FSTEntry entry in getChildren())
             {
                 entry.update();
             }
@@ -384,33 +360,39 @@ namespace CNUS_packer.fst
         public FSTEntry updateDirRefs()
         {
             if (!(getIsDir() || getIsRoot())) return null;
-            if(parent != null)
+            if (parent != null)
             {
                 setParentOffset(getParent().getEntryOffset());
             }
+
             FSTEntry result = null;
-            for (int  i = 0; i < getDirChildren().Count; i++)
+
+            for (int i = 0; i < getDirChildren().Count; i++)
             {
                 FSTEntry cur_dir = getDirChildren()[i];
                 if (i + 1 < getDirChildren().Count)
                 {
                     cur_dir.setNextOffset(getDirChildren()[i + 1].entryOffset);
                 }
+
                 FSTEntry cur_result = cur_dir.updateDirRefs();
+
                 if (cur_result != null)
                 {
                     FSTEntry cur_foo = cur_result.getParent();
-                    while(cur_foo.getNextOffset() == 0)
+                    while (cur_foo.getNextOffset() == 0)
                     {
                         cur_foo = cur_foo.getParent();
                     }
                     cur_result.setNextOffset(cur_foo.getNextOffset());
                 }
+
                 if (!(i+1 < getDirChildren().Count))
                 {
                     result = cur_dir;
                 }
             }
+
             return result;
         }
 
@@ -442,10 +424,11 @@ namespace CNUS_packer.fst
             if (getIsDir()) sb.Append("       ID:").Append(getEntryOffset()).Append("\n");
             if (getIsDir()) sb.Append(" ParentID:").Append(parentOffset).Append("\n");
             if (getIsDir()) sb.Append("   NextID:").Append(nextOffset).Append("\n");
-            foreach(FSTEntry e in getChildren())
+            foreach (FSTEntry entry in getChildren())
             {
-                sb.Append(e.ToString());
+                sb.Append(entry.ToString());
             }
+
             return sb.ToString();
         }
 
@@ -478,12 +461,12 @@ namespace CNUS_packer.fst
             {
                 if (getIsDir())
                 {
-                    Console.WriteLine("The folder \"" + getFilename() + "\" is emtpy. Please add a dummy file to it.");
+                    Console.Error.WriteLine("The folder \"" + getFilename() + "\" is emtpy. Please add a dummy file to it.");
                 }
                 else
                 {
-                    Console.WriteLine("The file \"" + getFilename() + "\" is not assigned to any content (.app).");
-                    Console.WriteLine("Please delete it or write a corresponding content rule");
+                    Console.Error.WriteLine("The file \"" + getFilename() + "\" is not assigned to any content (.app).");
+                    Console.Error.WriteLine("Please delete it or write a corresponding content rule.");
                 }
                 Environment.Exit(0);
             }

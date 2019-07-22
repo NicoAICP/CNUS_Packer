@@ -6,7 +6,7 @@ namespace CNUS_packer.utils
         private long osVersion = 0x0L;
         private long titleID = 0x0L;
         private short titleVersion = 0;
-        private int sdkVersion = 0;
+        private uint sdkVersion = 0;
         private uint appType = 0x0;
         private short groupID = 0;
         private byte[] osMask = new byte[32];
@@ -56,12 +56,12 @@ namespace CNUS_packer.utils
             titleVersion = value;
         }
 
-        public int GetSdkVersion()
+        public uint GetSdkVersion()
         {
             return sdkVersion;
         }
 
-        public void SetSdkVersion(int value)
+        public void SetSdkVersion(uint value)
         {
             sdkVersion = value;
         }
@@ -86,12 +86,12 @@ namespace CNUS_packer.utils
             groupID = value;
         }
 
-        public byte[] GetOSMask1()
+        public byte[] GetOSMask()
         {
             return osMask;
         }
 
-        public void SetOSMask1(byte[] value)
+        public void SetOSMask(byte[] value)
         {
             osMask = value;
         }

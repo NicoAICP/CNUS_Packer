@@ -1,20 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using CNUS_packer.contents;
 using CNUS_packer.utils;
 
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace CNUS_packer.crypto
 {
     public class ContentHashes
     {
-        Dictionary<int, byte[]> h0hashes = new Dictionary<int, byte[]>();
-        Dictionary<int, byte[]> h1hashes = new Dictionary<int, byte[]>();
-        Dictionary<int, byte[]> h2hashes = new Dictionary<int, byte[]>();
-        Dictionary<int, byte[]> h3hashes = new Dictionary<int, byte[]>();
+        private readonly Dictionary<int, byte[]> h0hashes = new Dictionary<int, byte[]>();
+        private readonly Dictionary<int, byte[]> h1hashes = new Dictionary<int, byte[]>();
+        private readonly Dictionary<int, byte[]> h2hashes = new Dictionary<int, byte[]>();
+        private readonly Dictionary<int, byte[]> h3hashes = new Dictionary<int, byte[]>();
 
-        byte[] TMDHash = new byte[0x14];
+        byte[] TMDHash = new byte[20];
 
         private int blockCount = 0;
 
@@ -22,18 +22,11 @@ namespace CNUS_packer.crypto
         {
             if (hashed)
             {
-                try
-                {
-                    calculateH0Hashes(file);
-                    calculateOtherHashes(1, h0hashes, h1hashes);
-                    calculateOtherHashes(2, h1hashes, h2hashes);
-                    calculateOtherHashes(3, h2hashes, h3hashes);
-                    setTMDHash(HashUtil.hashSHA1(getH3Hashes()));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.ToString());
-                }
+                calculateH0Hashes(file);
+                calculateOtherHashes(1, h0hashes, h1hashes);
+                calculateOtherHashes(2, h1hashes, h2hashes);
+                calculateOtherHashes(3, h2hashes, h3hashes);
+                setTMDHash(HashUtil.hashSHA1(getH3Hashes()));
             }
             else
             {
@@ -45,29 +38,27 @@ namespace CNUS_packer.crypto
         {
             int hash_level_pow = (int)Math.Pow(16, hash_level);
 
-            int hashescount = (blockCount / (hash_level_pow)) + 1;
+            int hashescount = (blockCount / hash_level_pow) + 1;
             int new_blocks = 0;
+
             for (int j = 0; j < hashescount; j++)
             {
                 byte[] cur_hashes = new byte[16 * 20];
-                for (int i = j * 16; i < ((j + 16) + 16); i++)
+                for (int i = j * 16; i < (j * 16) + 16; i++)
                 {
                     if (in_hashes.ContainsKey(i))
                     {
                         byte[] cur_hash = in_hashes[i];
                         Array.Copy(cur_hash, 0, cur_hashes, (i % 16) * 20, 20);
                     }
-                    else
-                    {
-                        Array.Copy(new byte[20], 0, cur_hashes, (i % 16) * 20, 20);
-                    }
                 }
                 out_hashes.Add(new_blocks, HashUtil.hashSHA1(cur_hashes));
                 new_blocks++;
-                int progress = (int)((new_blocks * 1.0 / hashescount * 1.0) * 100);
+
+                int progress = 100 * new_blocks / hashescount;
                 if (new_blocks % 100 == 0)
                 {
-                    Console.WriteLine("\rcalculating h" + hash_level + ": " + progress + "%");
+                    Console.Write("\rcalculating h" + hash_level + ": " + progress + "%");
                 }
             }
             Console.WriteLine("\rcalculating h" + hash_level + ": done");
@@ -85,21 +76,19 @@ namespace CNUS_packer.crypto
                 int total_blocks = (int)(file.Length / buffer_size) + 1;
                 do
                 {
-                    read = utils.utils.getChunkFromStream(fs, buffer, overflowbuffer, buffer_size);
-                    if (read != buffer_size && false) // TODO: probably does literally nothing, will have to re-check
+                    read = Utils.getChunkFromStream(fs, buffer, overflowbuffer, buffer_size);
+                    if (read != buffer_size) // TODO: probably does literally nothing, will have to re-check
                     {
                         MemoryStream new_buffer = new MemoryStream(buffer_size);
 
                         new_buffer.Write(buffer);
-                        buffer = new_buffer.ToArray();
+                        buffer = new_buffer.GetBuffer();
                     }
 
-                    byte[] hashtest = HashUtil.hashSHA1(buffer);
-
-                    h0hashes.Add(block, hashtest);
+                    h0hashes.Add(block, HashUtil.hashSHA1(buffer));
 
                     block++;
-                    int progress = (int)((block * 1.0 / total_blocks * 1.0) * 100);
+                    int progress = 100 * block / total_blocks;
                     if (block % 100 == 0)
                     {
                         Console.Write("\rcalculating h0: " + progress + "%");
@@ -176,7 +165,7 @@ namespace CNUS_packer.crypto
 
         public byte[] getH3Hashes()
         {
-            MemoryStream buffer = new MemoryStream(h3hashes.Count * 0x14);
+            MemoryStream buffer = new MemoryStream(h3hashes.Count * 20);
             for (int i = 0; i < h3hashes.Count; i++)
             {
                 buffer.Write(h3hashes[i]);

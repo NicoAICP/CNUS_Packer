@@ -10,7 +10,7 @@ namespace CNUS_packer.packaging
 {
     public class NUSPackageFactory
     {
-        private static Dictionary<Content,NUSpackage> contentDictionary = new Dictionary<Content,NUSpackage>();
+        private static Dictionary<Content, NUSpackage> contentDictionary = new Dictionary<Content, NUSpackage>();
         private static Dictionary<FST, NUSpackage> FSTDictionary = new Dictionary<FST, NUSpackage>();
         private static Dictionary<TMD, NUSpackage> TMDDictionary = new Dictionary<TMD, NUSpackage>();
         private static Dictionary<FSTEntries, NUSpackage> FSTEntriesDictionary = new Dictionary<FSTEntries, NUSpackage>();
@@ -27,36 +27,30 @@ namespace CNUS_packer.packaging
 
             FSTEntry root = entries.getRootEntry();
             root.setContent(contents.getFSTContent());
-            List<string> dir_paths = new List<string>();
-            string[] dirs = Directory.GetDirectories(config.getDir());
-            string[] files = Directory.GetFiles(config.getDir());
-            foreach (string d in dirs)
-            {
-                dir_paths.Add(d);
-            }
-            foreach (string f in files)
-            {
-                dir_paths.Add(f);
-            }
-            //File dir_read = new File(config.getDir());
-            readFiles(dir_paths, root);
-            Console.WriteLine("Files read. Set it to content files.");
-            ContentRulesService.applyRules(root, contents, config.getRules());
-            addContentDictonary(contents, nusPackage);
-            addContentsDictonary(contents, nusPackage);
-            Console.WriteLine("Generating the FST.");
+            readFiles(Directory.EnumerateFiles(config.getDir()), Directory.EnumerateDirectories(config.getDir()), root);
 
+            Console.WriteLine("Files read. Set it to content files.");
+
+            ContentRulesService.applyRules(root, contents, config.getRules());
+            addContentsDictonary(contents, nusPackage);
+            addContentDictonary(contents, nusPackage);
+
+            Console.WriteLine("Generating the FST.");
             fst.update();
+
             Console.WriteLine("Generating the Ticket");
             Ticket ticket = new Ticket(config.getAppInfo().GetTitleID(), config.getEncryptionKey(), config.getEncryptKeyWith());
-            Console.WriteLine("tickets key stuff: " + ticket.getDecryptedKey() + ", " + ticket.getEncryptWith());
+
             Console.WriteLine("Generating the TMD");
             TMD tmd = new TMD(config.getAppInfo(), fst, ticket);
             tmd.update();
+
             addTMDDictonary(tmd, nusPackage);
-            nusPackage.setFST(fst);
-            nusPackage.setTicket(ticket);
-            nusPackage.setTMD(tmd);
+
+            nusPackage.fst = fst;
+            nusPackage.ticket = ticket;
+            nusPackage.tmd = tmd;
+
             return nusPackage;
         }
 
@@ -124,6 +118,7 @@ namespace CNUS_packer.packaging
             {
                 return contentsDictionary[contents];
             }
+
             return null;
         }
 
@@ -133,57 +128,28 @@ namespace CNUS_packer.packaging
             {
                 return FSTEntriesDictionary[fstEntries];
             }
+
             return null;
         }
 
-        public static void readFiles(List<string> list, FSTEntry parent)
+        public static void readFiles(IEnumerable<string> file_paths, IEnumerable<string> dir_paths, FSTEntry parent)
         {
-            readFiles(list, parent, false);
+            readFiles(file_paths, dir_paths, parent, false);
         }
-        public static void readFiles(List<string> path_dir_files, FSTEntry parent, bool notInNUSPackage)
+
+        public static void readFiles(IEnumerable<string> file_paths, IEnumerable<string> dir_paths, FSTEntry parent, bool notInNUSPackage)
         {
-            /* foreach (File f in list)
-             {
-                 if (!f.isDirectory())
-                 {
-                     parent.addChildren(new FSTEntry(f, notInNUSPackage));
-                 }
-             }
-             foreach (File f in list)
-             {
-                 if (f.isDirectory())
-                 {
-                     FSTEntry newdir = new FSTEntry(f, notInNUSPackage);
-                     parent.addChildren(newdir);
-                     readFiles(f.listFiles(), newdir, notInNUSPackage);
-                 }
-             }*/
-            foreach (string f in path_dir_files)
+            foreach (string file in file_paths) // files first
             {
-                if (!Directory.Exists(f))
-                {
-                    parent.addChildren(new FSTEntry(f, notInNUSPackage));
-                }
+                FSTEntry newFile = new FSTEntry(file, notInNUSPackage);
+                parent.addChildren(newFile);
             }
-            foreach (string f in path_dir_files)
+
+            foreach (string dir in dir_paths) // directories afterwards
             {
-                if (Directory.Exists(f))
-                {
-                    List<string> newpath = new List<string>();
-                    string[] dir = Directory.GetDirectories(f);
-                    string[] files = Directory.GetFiles(f);
-                    foreach (string d in dir)
-                    {
-                        newpath.Add(d);
-                    }
-                    foreach (string fil in files)
-                    {
-                        newpath.Add(fil);
-                    }
-                    FSTEntry newdir = new FSTEntry(f, notInNUSPackage);
-                    parent.addChildren(newdir);
-                    readFiles(newpath, newdir, notInNUSPackage);
-                }
+                FSTEntry newDir = new FSTEntry(dir, notInNUSPackage);
+                parent.addChildren(newDir);
+                readFiles(Directory.EnumerateFiles(dir), Directory.EnumerateDirectories(dir), newDir, notInNUSPackage);
             }
         }
     }

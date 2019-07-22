@@ -1,9 +1,9 @@
+using CNUS_packer.crypto;
+using CNUS_packer.packaging;
 using CNUS_packer.utils;
+
 using System;
 using System.IO;
-
-using CNUS_packer.packaging;
-using CNUS_packer.crypto;
 
 namespace CNUS_packer
 {
@@ -13,7 +13,7 @@ namespace CNUS_packer
         {
             Console.WriteLine("CNUS_Packer v0.01 by NicoAICP [C# Port of NUSPacker by timogus]\n\n");
 
-            Directory.CreateDirectory(settings.tmpDir);
+            Directory.CreateDirectory(Settings.tmpDir);
 
             string inputPath = "input";
             string outputPath = "output";
@@ -58,7 +58,7 @@ namespace CNUS_packer
                 {
                     if(args.Length > i + 1)
                     {
-                        titleID = utils.utils.HexStringToLong(args[i + 1]);
+                        titleID = Convert.ToInt64(args[i + 1], 16);
                         i++;
                     }
                 }
@@ -66,7 +66,7 @@ namespace CNUS_packer
                 {
                     if (args.Length > i + 1)
                     {
-                        osVersion = utils.utils.HexStringToLong(args[i + 1]);
+                        osVersion = Convert.ToInt64(args[i + 1], 16);
                         i++;
                     }
                 }
@@ -74,7 +74,7 @@ namespace CNUS_packer
                 {
                     if (args.Length > i + 1)
                     {
-                        appType = (uint) utils.utils.HexStringToLong(args[i + 1]);
+                        appType = Convert.ToUInt32(args[i + 1], 16);
                         i++;
                     }
                 }
@@ -82,7 +82,7 @@ namespace CNUS_packer
                 {
                     if (args.Length > i + 1)
                     {
-                        titleVersion = (short) utils.utils.HexStringToLong(args[i + 1]);
+                        titleVersion = Convert.ToInt16(args[i + 1], 16);
                         i++;
                     }
                 }
@@ -115,7 +115,7 @@ namespace CNUS_packer
 
             if(!Directory.Exists(inputPath + @"/code") || !Directory.Exists(inputPath + @"/content") || !Directory.Exists(inputPath + @"/meta"))
             {
-                Console.WriteLine("Invalid input dir (" + Directory.GetDirectoryRoot(inputPath) +"): It's missing either the code, content or meta folder");
+                Console.WriteLine("Invalid input dir (" + Path.GetFullPath(inputPath) +"): It's missing either the code, content or meta folder");
                 Environment.Exit(0);
             }
             AppXMLInfo appinfo = new AppXMLInfo();
@@ -127,25 +127,25 @@ namespace CNUS_packer
 
             if(encryptionKey == "" || encryptionKey.Length != 32)
             {
-                encryptionKey = settings.defaultEncryptionKey;
-                Console.WriteLine(encryptionKey);
+                encryptionKey = Settings.defaultEncryptionKey;
                 Console.WriteLine("Empty or invalid encryption provided. Will use " + encryptionKey + " instead");
             }
             Console.WriteLine();
             if(encryptKeyWith == "" || encryptKeyWith.Length != 32)
             {
-                Console.WriteLine("Will try to load the encryptionWith key from the file \"" + settings.encyptWithFile + "\"");
+                Console.WriteLine("Will try to load the encryptionWith key from the file \"" + Settings.encyptWithFile + "\".");
                 encryptKeyWith = loadEncryptWithKey();
             }
             if (encryptKeyWith == "" || encryptKeyWith.Length != 32)
             {
-                encryptKeyWith = settings.defaultEncryptWithKey;
+                encryptKeyWith = Settings.defaultEncryptWithKey;
                 Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!");
                 Console.WriteLine("WARNING:Empty or invalid encryptWith key provided. Will use " + encryptKeyWith + " instead");
                 Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!");
             }
+            Console.WriteLine();
 
-            string appxml = inputPath + settings.pathToAppXml;
+            string appxml = inputPath + Settings.pathToAppXml;
 
             if (!skipXMLReading)
             {
@@ -159,13 +159,14 @@ namespace CNUS_packer
                 }
                 catch (Exception  e)
                 {
-                    Console.WriteLine("Error while parsing the app.xml from path \"" + settings.pathToAppXml + "\": " + e);
+                    Console.WriteLine("Error while parsing the app.xml from path \"" + Settings.pathToAppXml + "\": " + e.ToString());
                 }
             }
             else
             {
                 Console.WriteLine("Skipped app.xml parsing");
             }
+
             short content_group = appinfo.GetGroupID();
             titleID = appinfo.GetTitleID();
 
@@ -175,11 +176,11 @@ namespace CNUS_packer
             Console.WriteLine("Input            : \"" + inputPath + "\"");
             Console.WriteLine("Output           : \"" + outputPath + "\"");
 
-            Console.WriteLine("TitleID          : " + appinfo.GetTitleID().ToString("X"));
-            Console.WriteLine("GroupID          : " + appinfo.GetGroupID().ToString("X"));
-            Console.WriteLine("ParentID         : " + parentID.ToString("X"));
-            Console.WriteLine("AppType          : " + appinfo.GetAppType().ToString("X"));
-            Console.WriteLine("OSVersion        : " + appinfo.GetOsVersion().ToString("X"));
+            Console.WriteLine("TitleID          : " + appinfo.GetTitleID().ToString("X16"));
+            Console.WriteLine("GroupID          : " + appinfo.GetGroupID().ToString("X4"));
+            Console.WriteLine("ParentID         : " + parentID.ToString("X16"));
+            Console.WriteLine("AppType          : " + appinfo.GetAppType().ToString("X8"));
+            Console.WriteLine("OSVersion        : " + appinfo.GetOsVersion().ToString("X16"));
             Console.WriteLine("Encryption key   : " + encryptionKey);
             Console.WriteLine("Encrypt key with : " + encryptKeyWith);
             Console.WriteLine();
@@ -192,12 +193,12 @@ namespace CNUS_packer
             nuspackage.packContents(outputPath);
             nuspackage.printTicketInfos();
 
-            utils.utils.deleteDir(settings.tmpDir);
+            Utils.deleteDir(Settings.tmpDir);
         }
 
         public static string loadEncryptWithKey()
         {
-            string encryptPath = settings.encyptWithFile;
+            string encryptPath = Settings.encyptWithFile;
             if (!File.Exists(encryptPath)) return "";
             string key = "";
             using (StreamReader input = new StreamReader(encryptPath))
@@ -208,7 +209,7 @@ namespace CNUS_packer
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed to read \"" + settings.encyptWithFile + "\"");
+                    Console.WriteLine("Failed to read \"" + Settings.encyptWithFile + "\"");
                     Console.WriteLine(e.ToString());
                 }
             }

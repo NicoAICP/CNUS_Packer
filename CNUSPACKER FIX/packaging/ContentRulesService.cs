@@ -20,7 +20,7 @@ namespace CNUS_packer.packaging
             Console.WriteLine("-----");
             foreach (ContentRules.ContentRule rule in rules.GetRules())
             {
-                Console.WriteLine("Apply rule " + rule.getPattern());
+                Console.WriteLine("Apply rule \"" + rule.getPattern() + "\"");
                 if (rule.isContentPerMatch())
                 {
                     setNewContentRecursiveRule("", rule.getPattern(), root, targetContents, rule);
@@ -78,7 +78,7 @@ namespace CNUS_packer.packaging
                     if (m.Success)
                     {
                         Content result_content = targetContents.getNewContent(rule.getDetails());
-                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + result_content.getID().ToString("X") + " for: " + filePath);
+                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + result_content.ID.ToString("X") + " for: " + filePath);
                         child.setContent(result_content);
                         result = result_content;
                     }
@@ -103,7 +103,7 @@ namespace CNUS_packer.packaging
                 if (m.Success)
                 {
                     //if (!cur_entry.isNotInPackage()) Console.WriteLine("Set content to " + string.Format("%08X (%08X,%08X)", cur_content.getID(), cur_content_size, cur_entry.getFilesize()) + " for: " + filePath);
-                    if (!cur_entry.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.getID().ToString("X") + " (" + cur_content_size.ToString("X") + "," + cur_entry.getFilesize().ToString("X") + ") for: " + path);
+                    if (!cur_entry.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.ID.ToString("X") + " (" + cur_content_size.ToString("X") + "," + cur_entry.getFilesize().ToString("X") + ") for: " + path);
                     if (cur_entry.getChildren().Count == 0/* && cur_entry.getFilename().equals("content")*/)
                     {  //TODO: may could cause problems. Current solution only apply to content folder.
                         cur_entry.setContent(cur_content);
@@ -145,7 +145,7 @@ namespace CNUS_packer.packaging
                         cur_content_size += child.getFilesize();
 
                         //if (!child.isNotInPackage()) Console.WriteLine("Set content to " + string.Format("%08X (%08X,%08X)", cur_content.getID(), cur_content_size, child.getFilesize()) + " for: " + filePath);
-                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.getID().ToString("X") + " ("+cur_content_size.ToString("X")+","+child.getFilesize().ToString("X") + ") for: " + filePath);
+                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.ID .ToString("X") + " ("+cur_content_size.ToString("X")+","+child.getFilesize().ToString("X") + ") for: " + filePath);
                         //System.out.println(child.getFilename());
                         child.setContent(cur_content);
                         result = true;

@@ -8,36 +8,16 @@ namespace CNUS_packer.utils
     {
         public static byte[] hashSHA2(byte[] data)
         {
-            SHA256 sha256;
-            try
-            {
-                sha256 = SHA256.Create();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return new byte[0x20];
-            }
+            SHA256 sha256 = SHA256.Create();
 
             return sha256.ComputeHash(data);
         }
 
         public static byte[] hashSHA1(byte[] data)
         {
-            SHA1 sha1 = SHA1.Create("SHA-1");
-            byte[] returning;
+            SHA1 sha1 = SHA1.Create();
 
-            try
-            {
-                returning = sha1.ComputeHash(data);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-                returning = new byte[0x14];
-            }
-
-            return returning;
+            return sha1.ComputeHash(data);
         }
 
         public static byte[] hashSHA1(FileInfo file)
@@ -47,7 +27,7 @@ namespace CNUS_packer.utils
 
         public static byte[] hashSHA1(FileInfo file, int alignment)
         {
-            byte[] hash = new byte[0x14];
+            byte[] hash;
             SHA1 sha1 = SHA1.Create();
             using (FileStream fs = file.Open(FileMode.Open))
             {
@@ -57,57 +37,40 @@ namespace CNUS_packer.utils
             return hash;
         }
 
-        private static byte[] copyOfRange(byte[] src, int start, int end)
-        {
-            int len = end - start;
-            byte[] dest = new byte[len];
-            // note i is always from 0
-            for (int i = 0; i < len; i++)
-            {
-                dest[i] = src[start + i]; // so 0..n = 0+x..n+x
-            }
-            return dest;
-        }
-
         public static byte[] Hash(SHA1 digest, FileStream fs, long inputSize, int bufferSize, int alignment)
         {
-            long target_size = alignment == 0 ? inputSize : utils.align(inputSize, alignment);
+            long target_size = (alignment == 0) ? inputSize : Utils.align(inputSize, alignment);
 
             long cur_position = 0;
-            int check = 0;
-            int inBlockBufferRead = 0;
+            int inBlockBufferRead;
             byte[] blockBuffer = new byte[bufferSize];
 
             ByteArrayBuffer overflow = new ByteArrayBuffer(bufferSize);
 
             do
             {
-                if ((cur_position + bufferSize) > inputSize)
+                if (cur_position + bufferSize > inputSize)
                 {
-                    long expectedSize = (inputSize - cur_position);
+                    long expectedSize = inputSize - cur_position;
                     MemoryStream buffer = new MemoryStream(bufferSize);
 
-                    inBlockBufferRead = utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
+                    inBlockBufferRead = Utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
 
-                    buffer.Write(copyOfRange(blockBuffer, 0, inBlockBufferRead));
+                    buffer.Write(Utils.copyOfRange(blockBuffer, 0, inBlockBufferRead));
 
                     blockBuffer = buffer.GetBuffer();
-                    check = (int)expectedSize;
                     inBlockBufferRead = bufferSize;
                 }
                 else
                 {
                     int expectedSize = bufferSize;
-                    inBlockBufferRead = utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
+                    inBlockBufferRead = Utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
                 }
-
-
-                digest.ComputeHash(blockBuffer, 0, check);
 
                 cur_position += inBlockBufferRead;
             } while (cur_position < target_size && (inBlockBufferRead == bufferSize));
 
-            return digest.ComputeHash(blockBuffer, 0, check);
+            return digest.ComputeHash(blockBuffer);
         }
     }
 }

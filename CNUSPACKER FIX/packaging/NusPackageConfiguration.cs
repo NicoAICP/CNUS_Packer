@@ -1,10 +1,9 @@
 using CNUS_packer.crypto;
 using CNUS_packer.utils;
-using System;
 
 namespace CNUS_packer.packaging
 {
-   public class NusPackageConfiguration
+    public class NusPackageConfiguration
     {
         private string dir;
         private AppXMLInfo appInfo;
@@ -72,12 +71,12 @@ namespace CNUS_packer.packaging
             this.rules = rules;
         }
 
-        public String getFullGameDir()
+        public string getFullGameDir()
         {
             return fullGameDir;
         }
 
-        public void setFullGameDir(String fullGameDir)
+        public void setFullGameDir(string fullGameDir)
         {
             this.fullGameDir = fullGameDir;
         }

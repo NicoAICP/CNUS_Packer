@@ -1,8 +1,9 @@
+using CNUS_packer.contents;
+using CNUS_packer.packaging;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
-using CNUS_packer.contents;
-using CNUS_packer.packaging;
 
 
 namespace CNUS_packer.fst
@@ -19,16 +20,8 @@ namespace CNUS_packer.fst
 
         public List<FSTEntry> getEntries()
         {
-            if (entries == null)
-            {
-                entries = new List<FSTEntry>();
-            }
             return entries;
         }
-        /* public bool isEmpty()
-         {
-             return entries.isEmpty();
-         }*/
 
         public bool addEntry(FSTEntry entry)
         {
@@ -94,9 +87,8 @@ namespace CNUS_packer.fst
         public FSTEntry getRootEntry()
         {
             List<FSTEntry> entries = getEntries();
-            if (entries.Count == 0) return null;
 
-            return entries[0];
+            return (entries.Count == 0) ? null : entries[0];
         }
 
         public void updateDirRefs()

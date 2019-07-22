@@ -79,34 +79,34 @@ namespace CNUS_packer.packaging
         public static ContentRules getCommonRules(short contentGroup, long titleID)
         {
             ContentRules rules = new ContentRules();
-            ContentDetails common_details_code = new ContentDetails(false, settings.groupid_code, 0x0L, settings.fstflags_code);
+            ContentDetails common_details_code = new ContentDetails(false, Settings.groupid_code, 0x0L, Settings.fstflags_code);
             rules.CreateNewRule("^/code/app\\.xml$", common_details_code);
             rules.CreateNewRule("^/code/cos\\.xml$", common_details_code);
-            ContentDetails common_details_meta = new ContentDetails(true, settings.groupid_meta, 0x0L, settings.fstflags_meta);
+            ContentDetails common_details_meta = new ContentDetails(true, Settings.groupid_meta, 0x0L, Settings.fstflags_meta);
             rules.CreateNewRule("^/meta/meta\\.xml$", common_details_meta);
 
 
-            common_details_meta = new ContentDetails(true, settings.groupid_meta, 0x0L, settings.fstflags_meta);
+            common_details_meta = new ContentDetails(true, Settings.groupid_meta, 0x0L, Settings.fstflags_meta);
             rules.CreateNewRule("^/meta/((?!\\.xml).)*$", common_details_meta);
 
 
-            common_details_meta = new ContentDetails(true, settings.groupid_meta, 0x0L, settings.fstflags_meta);
+            common_details_meta = new ContentDetails(true, Settings.groupid_meta, 0x0L, Settings.fstflags_meta);
             rules.CreateNewRule("^/meta/bootMovie\\.h264$", common_details_meta);
 
             rules.CreateNewRule("^/meta/bootLogoTex\\.tga$", common_details_meta);
 
 
-            ContentDetails common_details_meta_manual = new ContentDetails(true, settings.groupid_meta, 0x0L, settings.fstflags_meta);
+            ContentDetails common_details_meta_manual = new ContentDetails(true, Settings.groupid_meta, 0x0L, Settings.fstflags_meta);
             rules.CreateNewRule("^/meta/Manual\\.bfma$", common_details_meta_manual);
 
 
-            ContentDetails common_details_meta_images = new ContentDetails(true, settings.groupid_meta, 0x0L, settings.fstflags_meta);
+            ContentDetails common_details_meta_images = new ContentDetails(true, Settings.groupid_meta, 0x0L, Settings.fstflags_meta);
             rules.CreateNewRule("^/meta/.*\\.jpg$", common_details_meta_images);
 
 
             rules.CreateNewRule("/code/.*(\\.rpx|\\.rpl)$", common_details_code, true);
 
-            ContentDetails common_details_preload = new ContentDetails(true, settings.groupid_code, 0x0L, settings.fstflags_code);
+            ContentDetails common_details_preload = new ContentDetails(true, Settings.groupid_code, 0x0L, Settings.fstflags_code);
             rules.CreateNewRule("^/code/preload\\.txt$", common_details_preload);
 
 
@@ -121,7 +121,7 @@ namespace CNUS_packer.packaging
             rules.CreateNewRule("^/code/rvlt\\.tmd$", common_details_code);
 
 
-            ContentDetails common_details_content = new ContentDetails(true, contentGroup, titleID, settings.fstflags_content);
+            ContentDetails common_details_content = new ContentDetails(true, contentGroup, titleID, Settings.fstflags_content);
             rules.CreateNewRule("^/content/.*$", common_details_content);
             return rules;
         }
