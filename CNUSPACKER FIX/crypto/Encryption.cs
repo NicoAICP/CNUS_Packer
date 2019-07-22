@@ -17,16 +17,8 @@ namespace CNUS_packer.crypto
 
         public Encryption(Key key, IV iv)
         {
-            // Console.WriteLine("key passed right here: " + key);
-            try
-            {
-                cry.Mode = CipherMode.CBC;
-                cry.Padding = PaddingMode.None;
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
+            cry.Mode = CipherMode.CBC;
+            cry.Padding = PaddingMode.None;
             init(key, iv);
         }
 
@@ -158,12 +150,6 @@ namespace CNUS_packer.crypto
             do
             {
                 read = Utils.getChunkFromStream(input, buffer, overflowbuffer, buffer_size);
-                if (read != buffer_size) // TODO: probably does literally nothing, re-check later
-                {
-                    MemoryStream new_buffer = new MemoryStream(buffer_size);
-                    new_buffer.Write(buffer);
-                    buffer = new_buffer.GetBuffer();
-                }
 
                 byte[] output_byte_arr = encryptChunkHashed(buffer, block, hashes, content.ID);
                 if (output_byte_arr.Length != BLOCKSIZE) Console.WriteLine("WTF?");
@@ -186,15 +172,7 @@ namespace CNUS_packer.crypto
             Array.Reverse(temp); // we need to write big-endian
             ivstrm.Write(temp);
             IV iv = new IV(ivstrm.GetBuffer());
-            byte[] decryptedHashes = null;
-            try
-            {
-                decryptedHashes = hashes.getHashForBlock(block);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
+            byte[] decryptedHashes = hashes.getHashForBlock(block);
             decryptedHashes[1] ^= (byte)content_id;
 
             byte[] encryptedhashes = encryptChunk(decryptedHashes, 0x0400, iv);
@@ -239,7 +217,6 @@ namespace CNUS_packer.crypto
 
         public byte[] encrypt(byte[] input, int offset, int len)
         {
-            // Console.WriteLine("input array that is to be transformed: " + System.Text.Encoding.Default.GetString(input));
             return cry.CreateEncryptor().TransformFinalBlock(input, offset, len);
         }
 

@@ -77,13 +77,6 @@ namespace CNUS_packer.crypto
                 do
                 {
                     read = Utils.getChunkFromStream(fs, buffer, overflowbuffer, buffer_size);
-                    if (read != buffer_size) // TODO: probably does literally nothing, will have to re-check
-                    {
-                        MemoryStream new_buffer = new MemoryStream(buffer_size);
-
-                        new_buffer.Write(buffer);
-                        buffer = new_buffer.GetBuffer();
-                    }
 
                     h0hashes.Add(block, HashUtil.hashSHA1(buffer));
 

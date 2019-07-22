@@ -4,7 +4,7 @@ namespace CNUS_packer.crypto
 {
     public class Key
     {
-        private static int LENGTH = 0x10;
+        private const int LENGTH = 0x10;
         private byte[] key = new byte[LENGTH];
 
         public Key()

@@ -22,7 +22,6 @@ namespace CNUS_packer.fst
 
     public class FSTEntry
     {
-        //private File file;
         private string filepath;
         private string filename = "";
         private FSTEntry parent = null;
@@ -244,7 +243,7 @@ namespace CNUS_packer.fst
         public byte[] getAsData()
         {
             MemoryStream buffer = new MemoryStream(getDataSize());
-            byte[] temp; // we need to write in big-endian, so we're gonna Array.Reverse a lot
+            byte[] temp; // we need to write in big endian, so we're gonna Array.Reverse a lot
             if (getIsRoot())
             {
                 buffer.WriteByte(1);
@@ -257,7 +256,7 @@ namespace CNUS_packer.fst
             else
             {
                 buffer.WriteByte(getType());
-                buffer.WriteByte((byte)((nameOffset >> 16) & 0xFF)); // We need to write a 24bit int
+                buffer.WriteByte((byte)((nameOffset >> 16) & 0xFF)); // We need to write a 24bit int (big endian)
                 buffer.WriteByte((byte)((nameOffset >> 8) & 0xFF));
                 buffer.WriteByte((byte)(nameOffset & 0xFF));
 
@@ -328,7 +327,7 @@ namespace CNUS_packer.fst
         {
             if(offset > 0xFFFFFF)
             {
-                Console.WriteLine("Warning: filename offset is too big. Maximum is "+0xFFFFFF+" tried to set to " + offset);
+                Console.WriteLine("Warning: filename offset is too big. Maximum is " + 0xFFFFFF + ", tried to set to " + offset);
             }
             this.nameOffset = offset;
         }
@@ -434,7 +433,7 @@ namespace CNUS_packer.fst
 
         public void printRecursive(int space)
         {
-            for(int i = 0; i<space; i++)
+            for(int i = 0; i < space; i++)
             {
                 Console.Write(" ");
             }

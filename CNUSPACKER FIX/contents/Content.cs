@@ -222,9 +222,7 @@ namespace CNUS_packer.contents
         public byte[] getAsData()
         {
             MemoryStream buffer = new MemoryStream(getDataSize());
-
-            // We need to write in big endian, so we're gonna Array.Reverse a lot
-            byte[] temp;
+            byte[] temp; // We need to write in big endian, so we're gonna Array.Reverse a lot
 
             temp = BitConverter.GetBytes(ID);
             Array.Reverse(temp);

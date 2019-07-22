@@ -149,9 +149,10 @@ namespace CNUS_packer
 
             if (!skipXMLReading)
             {
+                Console.WriteLine("Parsing app.xml in code folder (use the -skipXMLParsing argument to disable it)");
                 try
                 {
-                    Console.WriteLine("Parsing app.xml (values will be overwritten. Use the -skipXMLParsing argument to disable it)");
+
                     XMLParser parser = new XMLParser();
                     parser.loadDocument(appxml);
 

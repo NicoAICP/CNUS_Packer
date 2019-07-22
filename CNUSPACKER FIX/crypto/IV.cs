@@ -2,7 +2,7 @@ namespace CNUS_packer.crypto
 {
     public class IV
     {
-        private static int LENGTH = 0x10;
+        private const int LENGTH = 0x10;
         private byte[] iv = new byte[LENGTH];
 
         public IV()

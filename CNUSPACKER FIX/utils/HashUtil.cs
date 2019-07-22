@@ -43,22 +43,17 @@ namespace CNUS_packer.utils
 
             long cur_position = 0;
             int inBlockBufferRead;
-            byte[] blockBuffer = new byte[bufferSize];
 
             ByteArrayBuffer overflow = new ByteArrayBuffer(bufferSize);
+            MemoryStream finalbuffer = new MemoryStream();
 
             do
             {
+                byte[] blockBuffer = new byte[bufferSize];
                 if (cur_position + bufferSize > inputSize)
                 {
                     long expectedSize = inputSize - cur_position;
-                    MemoryStream buffer = new MemoryStream(bufferSize);
-
-                    inBlockBufferRead = Utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
-
-                    buffer.Write(Utils.copyOfRange(blockBuffer, 0, inBlockBufferRead));
-
-                    blockBuffer = buffer.GetBuffer();
+                    Utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
                     inBlockBufferRead = bufferSize;
                 }
                 else
@@ -66,11 +61,12 @@ namespace CNUS_packer.utils
                     int expectedSize = bufferSize;
                     inBlockBufferRead = Utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
                 }
+                finalbuffer.Write(blockBuffer, 0, inBlockBufferRead);
 
                 cur_position += inBlockBufferRead;
             } while (cur_position < target_size && (inBlockBufferRead == bufferSize));
 
-            return digest.ComputeHash(blockBuffer);
+            return digest.ComputeHash(finalbuffer.ToArray());
         }
     }
 }

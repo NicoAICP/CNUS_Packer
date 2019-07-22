@@ -12,10 +12,8 @@ namespace CNUS_packer.packaging
         private int signatureType = 0x00010004;
         private byte[] signature = new byte[0x100];
         private byte[] padding0 = new byte[0x3C];
-        private static MemoryStream issuer_stream = new MemoryStream(0x40);
+        private static byte[] issuer = Utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000");
 
-
-        private byte[] issuer;
         private byte version = 0x01;
         private byte CACRLVersion = 0x00;
         private byte signerCRLVersion = 0x00;
@@ -34,7 +32,7 @@ namespace CNUS_packer.packaging
         private short contentCount = 0x00;
         private short bootIndex = 0x00;
         private byte[] padding3 = new byte[2];
-        private byte[] SHA2 = new byte[0x20];
+        public byte[] SHA2 = new byte[0x20];
 
         private ContentInfos contentInfos = null;
         private Contents contents = null;
@@ -49,7 +47,6 @@ namespace CNUS_packer.packaging
             setTitleVersion(appInfo.GetTitleVersion());
             setTicket(ticket);
             setContents(fst.getContents());
-            WriteIssues();
             contentInfos = new ContentInfos();
         }
 
@@ -60,12 +57,6 @@ namespace CNUS_packer.packaging
                 this.contents = contents;
                 contentCount = contents.getContentCount();
             }
-        }
-
-        void WriteIssues()
-        {
-            issuer_stream.Write(Utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000"));
-            this.issuer = issuer_stream.GetBuffer();
         }
 
         public void update()
@@ -79,7 +70,6 @@ namespace CNUS_packer.packaging
 
             ContentInfo firstContentInfo = new ContentInfo(contents.getContentCount());
 
-            Console.WriteLine("hi :3");
             firstContentInfo.setSHA2Hash(HashUtil.hashSHA2(contents.getAsData()));
             getContentInfos().setContentInfo(0, firstContentInfo);
         }
@@ -92,7 +82,7 @@ namespace CNUS_packer.packaging
         public byte[] getAsData()
         {
             MemoryStream buffer = new MemoryStream(getDataSize());
-            byte[] temp;
+            byte[] temp; // We need to write in big endian, so we're gonna Array.Reverse a lot
 
             temp = BitConverter.GetBytes(signatureType);
             Array.Reverse(temp);
@@ -118,7 +108,7 @@ namespace CNUS_packer.packaging
             temp = BitConverter.GetBytes(getGroupID());
             Array.Reverse(temp);
             buffer.Write(temp);
-            temp = BitConverter.GetBytes((int)getAppType());
+            temp = BitConverter.GetBytes(getAppType());
             Array.Reverse(temp);
             buffer.Write(temp);
             temp = BitConverter.GetBytes(random1);
@@ -145,7 +135,6 @@ namespace CNUS_packer.packaging
             buffer.Write(SHA2);
 
             buffer.Write(getContentInfos().getAsData());
-            Console.WriteLine("Watch out!");
             buffer.Write(getContents().getAsData());
 
             return buffer.GetBuffer();

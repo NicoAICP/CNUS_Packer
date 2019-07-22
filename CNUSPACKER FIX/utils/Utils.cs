@@ -71,8 +71,10 @@ namespace CNUS_packer.utils
                 {
                     long tooMuch = inBlockBuffer + bytesRead - expectedSize;
                     long toRead = expectedSize - inBlockBuffer;
+
                     Array.Copy(overflowbuffer.buffer, 0, output, inBlockBuffer, (int)toRead);
                     inBlockBuffer += (int)toRead;
+
                     Array.Copy(overflowbuffer.buffer, (int)toRead, overflowbuffer.buffer, 0, (int)tooMuch);
                     overflowbuffer.setLengthOfDataInBuffer((int)tooMuch);
                 }
