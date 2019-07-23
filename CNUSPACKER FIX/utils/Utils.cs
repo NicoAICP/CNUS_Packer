@@ -129,11 +129,7 @@ namespace CNUS_packer.utils
                     }
 
                 } while (written < filesize);
-
-                if (s != null)
-                {
-                    Console.WriteLine("\r" + Path.GetFileName(path) + ": 100%");
-                }
+                Console.WriteLine();
             }
 
             return written;

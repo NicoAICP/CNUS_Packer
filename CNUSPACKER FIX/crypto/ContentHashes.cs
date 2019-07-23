@@ -87,7 +87,6 @@ namespace CNUS_packer.crypto
                         Console.Write("\rcalculating h0: " + progress + "%");
                     }
                 } while (read == buffer_size);
-
                 Console.WriteLine("\rcalculating h0: done");
                 setBlockCount(block);
             }
