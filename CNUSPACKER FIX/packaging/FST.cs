@@ -1,8 +1,10 @@
-﻿using CNUS_packer.contents;
+using CNUS_packer.contents;
 using CNUS_packer.fst;
+using CNUS_packer.utils;
 
 using System.IO;
 using System.Text;
+using System;
 
 namespace CNUS_packer.packaging
 {
@@ -12,12 +14,10 @@ namespace CNUS_packer.packaging
         private int unknown = 0x20;
         private int contentCount = 0;
 
-        private byte[] padding = new byte[0x14];
-
         private Contents contents = null;
         private FSTEntries fileEntries = null;
 
-        private static MemoryStream strings = new MemoryStream(0x300000);
+        private static MemoryStream strings = new MemoryStream();
 
         public static int curEntryOffset = 0x00;
 
@@ -52,31 +52,25 @@ namespace CNUS_packer.packaging
             strings.WriteByte(0x00);
         }
 
-        private byte[] copyOfRange(byte[] src, int start, int end)
-        {
-            int len = end - start;
-            byte[] dest = new byte[len];
-            // note i is always from 0
-            for (int i = 0; i < len; i++)
-            {
-                dest[i] = src[start + i]; // so 0..n = 0+x..n+x
-            }
-            return dest;
-        }
-
         public byte[] getAsData()
         {
-            MemoryStream stream = new MemoryStream(getDataSize());
-            BinaryWriter buffer = new BinaryWriter(stream);
+            MemoryStream buffer = new MemoryStream(getDataSize());
+            byte[] temp;
+
             buffer.Write(magicbytes);
-            buffer.Write(unknown);
-            buffer.Write(contentCount);
-            buffer.Write(padding);
+            temp = BitConverter.GetBytes(unknown);
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            temp = BitConverter.GetBytes(contentCount);
+            Array.Reverse(temp);
+            buffer.Write(temp);
+            buffer.Seek(20, SeekOrigin.Current);
             buffer.Write(contents.getFSTContentHeaderAsData());
             buffer.Write(fileEntries.getAsData());
-            buffer.Write(copyOfRange(strings.ToArray(), 0, (int)strings.Position));
+            buffer.Write(strings.ToArray());
             buffer.Write(alignment);
-            return stream.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()
@@ -85,11 +79,11 @@ namespace CNUS_packer.packaging
             size += magicbytes.Length;
             size += 0x04; // unknown
             size += 0x04; // contentCount
-            size += padding.Length;
+            size += 20; // padding
             size += contents.getFSTContentHeaderDataSize();
             size += fileEntries.getDataSize();
             size += (int)strings.Position;
-            int newsize = (int)utils.utils.align(size, 0x8000);
+            int newsize = (int)Utils.align(size, 0x8000);
             alignment = new byte[newsize - size];
             return newsize;
         }
@@ -100,7 +94,7 @@ namespace CNUS_packer.packaging
             {
                 fileEntries = new FSTEntries();
             }
-            return this.fileEntries;
+            return fileEntries;
         }
 
         public Contents getContents()

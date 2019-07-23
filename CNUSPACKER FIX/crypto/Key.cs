@@ -1,8 +1,10 @@
-﻿namespace CNUS_packer.crypto
+using CNUS_packer.utils;
+
+namespace CNUS_packer.crypto
 {
     public class Key
     {
-        private static int LENGTH = 0x10;
+        private const int LENGTH = 0x10;
         private byte[] key = new byte[LENGTH];
 
         public Key()
@@ -14,7 +16,7 @@
             setKey(key);
         }
 
-        public Key(string s) : this(utils.utils.HexStringToByteArray(s))
+        public Key(string s) : this(Utils.HexStringToByteArray(s))
         {
         }
 
@@ -25,20 +27,15 @@
 
         public void setKey(byte[] key)
         {
-            if (key != null && key.Length == getKey().Length)
+            if (key != null && key.Length == LENGTH)
             {
                 this.key = key;
             }
         }
 
-        public int getLength()
+        public override string ToString()
         {
-            return LENGTH;
-        }
-
-        public string toString()
-        {
-            return utils.utils.ByteArraytoString(key);
+            return Utils.ByteArrayToHexString(key);
         }
     }
 }

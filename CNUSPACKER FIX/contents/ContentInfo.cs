@@ -1,4 +1,5 @@
-﻿using System.IO;
+using System;
+using System.IO;
 
 namespace CNUS_packer.contents
 {
@@ -6,7 +7,7 @@ namespace CNUS_packer.contents
     {
         private short indexOffset = 0x00;
         private short commandCount = 0x0B;
-        private byte[] SHA2hash = new byte[0x20];
+        private byte[] SHA2hash = null;
 
         public ContentInfo() : this(0)
         {
@@ -24,13 +25,20 @@ namespace CNUS_packer.contents
 
         public byte[] getAsData()
         {
-            MemoryStream ms = new MemoryStream(0x24);
-            BinaryWriter buffer = new BinaryWriter(ms);
+            MemoryStream buffer = new MemoryStream(0x24);
+            byte[] temp;
 
-            buffer.Write(getIndexOffset());
-            buffer.Write(getCommandCount());
+            temp = BitConverter.GetBytes(getIndexOffset());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+
+            temp = BitConverter.GetBytes(getCommandCount());
+            Array.Reverse(temp);
+            buffer.Write(temp);
+
             buffer.Write(getSHA2Hash());
-            return ms.ToArray();
+
+            return buffer.GetBuffer();
         }
         public static int getDataSizeStatic()
         {

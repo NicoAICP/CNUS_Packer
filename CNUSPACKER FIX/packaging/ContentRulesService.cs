@@ -1,4 +1,4 @@
-﻿using CNUS_packer.contents;
+using CNUS_packer.contents;
 using CNUS_packer.fst;
 
 using System;
@@ -20,7 +20,7 @@ namespace CNUS_packer.packaging
             Console.WriteLine("-----");
             foreach (ContentRules.ContentRule rule in rules.GetRules())
             {
-                Console.WriteLine("Apply rule " + rule.getPattern());
+                Console.WriteLine("Apply rule \"" + rule.getPattern() + "\"");
                 if (rule.isContentPerMatch())
                 {
                     setNewContentRecursiveRule("", rule.getPattern(), root, targetContents, rule);
@@ -50,14 +50,11 @@ namespace CNUS_packer.packaging
 
             if (cur_entry.getChildren().Count == 0)
             {
-                string filePath = path;
-                MatchCollection m = p.Matches(filePath);
-                //System.out.println("Trying " + pattern + "to" + filePath);
+                MatchCollection m = p.Matches(path);
+                // Console.WriteLine("Trying rule \"" + p + "\" for string \"" + filePath + "\"");
                 if (m.Count > 0)
                 {
                     Content result_content = targetContents.getNewContent(rule.getDetails());
-                    //System.out.println("Set content to " + String.format("%08X", cur_content.getID()) + " for: " + filePath);
-                    //child.setContent(cur_content);
                     result = result_content;
                 }
             }
@@ -74,11 +71,12 @@ namespace CNUS_packer.packaging
                 else
                 {
                     string filePath = path + child.getFilename();
-                    MatchCollection m = p.Matches(filePath);
-                    if (m.Count > 0)
+                    Match m = p.Match(filePath);
+                    // Console.WriteLine("Trying rule \"" + p + "\" for string \"" + filePath + "\"");
+                    if (m.Success)
                     {
                         Content result_content = targetContents.getNewContent(rule.getDetails());
-                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " +result_content.getID().ToString("X") + " for: " + filePath);
+                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + result_content.ID.ToString("X") + " for: " + filePath);
                         child.setContent(result_content);
                         result = result_content;
                     }
@@ -98,13 +96,11 @@ namespace CNUS_packer.packaging
             bool result = false;
             if (cur_entry.getChildren().Count == 0)
             {
-                string filePath = path;
-                MatchCollection m = p.Matches(filePath);
-                //System.out.println("Trying " + pattern + "to" + filePath);
-                if (m.Count > 0)
+                Match m = p.Match(path);
+                // Console.WriteLine("Trying rule \"" + p + "\" for string \"" + filePath + "\"");
+                if (m.Success)
                 {
-                    //if (!cur_entry.isNotInPackage()) Console.WriteLine("Set content to " + string.Format("%08X (%08X,%08X)", cur_content.getID(), cur_content_size, cur_entry.getFilesize()) + " for: " + filePath);
-                    if (!cur_entry.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.getID().ToString("X") + " (" + cur_content_size.ToString("X")+","+cur_entry.getFilesize().ToString("X") + ") for: " + filePath);
+                    if (!cur_entry.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.ID.ToString("X") + " (" + cur_content_size.ToString("X") + "," + cur_entry.getFilesize().ToString("X") + ") for: " + path);
                     if (cur_entry.getChildren().Count == 0/* && cur_entry.getFilename().equals("content")*/)
                     {  //TODO: may could cause problems. Current solution only apply to content folder.
                         cur_entry.setContent(cur_content);
@@ -132,11 +128,10 @@ namespace CNUS_packer.packaging
                 else
                 {
                     string filePath = path + child.getFilename();
-                    MatchCollection m = p.Matches(filePath);
-                    //System.out.println("Trying " + pattern + "to" + filePath);
-                    if (m.Count > 0)
+                    Match m = p.Match(filePath);
+                    // Console.WriteLine("Trying rule \"" + p + "\" for string \"" + filePath + "\"");
+                    if (m.Success)
                     {
-                        //System.out.println(child.getFilename());
                         if (cur_content_size > 0 && (cur_content_size + child.getFilesize()) > MAX_CONTENT_LENGTH)
                         {
                             Console.WriteLine("Info: Target content size is bigger than " + MAX_CONTENT_LENGTH + " bytes. Content will be splitted in mutitple files. Don't worry, I'll automatically take care of everything!");
@@ -145,18 +140,18 @@ namespace CNUS_packer.packaging
                         }
                         cur_content_size += child.getFilesize();
 
-                        //if (!child.isNotInPackage()) Console.WriteLine("Set content to " + string.Format("%08X (%08X,%08X)", cur_content.getID(), cur_content_size, child.getFilesize()) + " for: " + filePath);
-                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.getID().ToString("X") + " ("+cur_content_size.ToString("X")+","+child.getFilesize().ToString("X") + ") for: " + filePath);
-                        //System.out.println(child.getFilename());
+                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.ID .ToString("X") + " ("+cur_content_size.ToString("X")+","+child.getFilesize().ToString("X") + ") for: " + filePath);
                         child.setContent(cur_content);
                         result = true;
                     }
                 }
             }
+
             if (result)
             {
                 cur_entry.setContent(cur_content_first);
             }
+
             return result;
         }
     }

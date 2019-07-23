@@ -1,8 +1,9 @@
-﻿using System;
+using CNUS_packer.contents;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using CNUS_packer.contents;
 
 
 namespace CNUS_packer.fst
@@ -21,7 +22,6 @@ namespace CNUS_packer.fst
 
     public class FSTEntry
     {
-        //private File file;
         private string filepath;
         private string filename = "";
         private FSTEntry parent = null;
@@ -52,40 +52,13 @@ namespace CNUS_packer.fst
 
         private bool notInPackage = false;
 
-        /* public FSTEntry(File file) : this(file, false)
-        {
-
-        }*/
         public FSTEntry(string filepath) : this(filepath, false)
         {
 
         }
-        /* public FSTEntry(File file, bool notInPackage)
-        {
-            if(file == null || !file.exists())
-            {
-                throw new Exception("Couldn't create FSTEntry, file is null or doesn't exists");
-
-            }
-            this.file = new File(file.getAbsolutePath());
-            setDir(file.isDirectory());
-            setFileName(file.getName());
-            setFileSize(file.length());
-
-            setNotInPackage(notInPackage);
-
-            if (isFile())
-            {
-                decryptedSHA1 = null;
-            }
-        }*/
 
         public FSTEntry(string filepath, bool notInPackage)
         {
-            //if(filepath == null || !System.IO.File.Exists(filepath) || !Directory.Exists(filepath))
-            //{
-            //    throw new Exception("Could not create FSTEntry, File is null or it doesnt exist");
-            //}
             this.filepath = Path.GetFullPath(filepath);
             setDir(Directory.Exists(filepath));
             setFileName(Path.GetFileName(filepath));
@@ -269,39 +242,57 @@ namespace CNUS_packer.fst
 
         public byte[] getAsData()
         {
-            MemoryStream ms = new MemoryStream(getDataSize());
-            BinaryWriter buffer = new BinaryWriter(ms);
+            MemoryStream buffer = new MemoryStream(getDataSize());
+            byte[] temp; // we need to write in big endian, so we're gonna Array.Reverse a lot
             if (getIsRoot())
             {
-                buffer.Write((byte)1);
-                buffer.Write(new byte[0x07]);
-                buffer.Write(root_entryCount);
-                buffer.Write(new byte[0x04]);
+                buffer.WriteByte(1);
+                buffer.Seek(7, SeekOrigin.Current);
+                temp = BitConverter.GetBytes(root_entryCount);
+                Array.Reverse(temp);
+                buffer.Write(temp);
+                buffer.Seek(4, SeekOrigin.Current);
             }
             else
             {
-                buffer.Write(getType());
-                buffer.Write((byte)((nameOffset >> 16) & 0xFF));       //We need to write a 24bit int..
-                buffer.Write((short)((nameOffset) & 0xFFFF));
+                buffer.WriteByte(getType());
+                buffer.WriteByte((byte)((nameOffset >> 16) & 0xFF)); // We need to write a 24bit int (big endian)
+                buffer.WriteByte((byte)((nameOffset >> 8) & 0xFF));
+                buffer.WriteByte((byte)(nameOffset & 0xFF));
+
                 if (getIsDir())
                 {
-                    buffer.Write(parentOffset);
-                    buffer.Write(nextOffset);
-
+                    temp = BitConverter.GetBytes(parentOffset);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
+                    temp = BitConverter.GetBytes(nextOffset);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
                 }
                 else if (isFile())
                 {
-                    buffer.Write((int)(fileoffset >> 5));
-                    buffer.Write((int)filesize);
+                    temp = BitConverter.GetBytes((int)(fileoffset >> 5));
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
+                    temp = BitConverter.GetBytes((int)filesize);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
                 }
                 else if (isNotInPackage())
                 {
-                    buffer.Write(0);
-                    buffer.Write((int)filesize);
+                    buffer.Seek(4, SeekOrigin.Current);
+                    temp = BitConverter.GetBytes((int)filesize);
+                    Array.Reverse(temp);
+                    buffer.Write(temp);
                 }
-                buffer.Write(getFlags());
-                buffer.Write((short)content.getID());
+                temp = BitConverter.GetBytes(getFlags());
+                Array.Reverse(temp);
+                buffer.Write(temp);
+                temp = BitConverter.GetBytes((short)content.ID);
+                Array.Reverse(temp);
+                buffer.Write(temp);
             }
+
             if(children != null)
             {
                 foreach(FSTEntry entry in getChildren())
@@ -309,7 +300,8 @@ namespace CNUS_packer.fst
                     buffer.Write(entry.getAsData());
                 }
             }
-            return ms.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()
@@ -335,7 +327,7 @@ namespace CNUS_packer.fst
         {
             if(offset > 0xFFFFFF)
             {
-                Console.WriteLine("Warning: filename offset is too big. Maximum is "+0xFFFFFF+" tried to set to " + offset);
+                Console.WriteLine("Warning: filename offset is too big. Maximum is " + 0xFFFFFF + ", tried to set to " + offset);
             }
             this.nameOffset = offset;
         }
@@ -347,16 +339,18 @@ namespace CNUS_packer.fst
             setEntryOffset(packaging.FST.curEntryOffset);
             packaging.FST.curEntryOffset++;
 
-            if(getIsDir() && !getIsRoot())
+            if (getIsDir() && !getIsRoot())
             {
                 setParentOffset(getParent().getEntryOffset());
             }
-            if(getContent() != null && isFile())
+
+            if (getContent() != null && isFile())
             {
                 long fileoffset = getContent().getOffsetForFileAndIncrease(this);
                 setFileOffset(fileoffset);
             }
-            foreach(FSTEntry entry in getChildren())
+
+            foreach (FSTEntry entry in getChildren())
             {
                 entry.update();
             }
@@ -365,33 +359,39 @@ namespace CNUS_packer.fst
         public FSTEntry updateDirRefs()
         {
             if (!(getIsDir() || getIsRoot())) return null;
-            if(parent != null)
+            if (parent != null)
             {
                 setParentOffset(getParent().getEntryOffset());
             }
+
             FSTEntry result = null;
-            for (int  i = 0; i < getDirChildren().Count; i++)
+
+            for (int i = 0; i < getDirChildren().Count; i++)
             {
                 FSTEntry cur_dir = getDirChildren()[i];
                 if (i + 1 < getDirChildren().Count)
                 {
                     cur_dir.setNextOffset(getDirChildren()[i + 1].entryOffset);
                 }
+
                 FSTEntry cur_result = cur_dir.updateDirRefs();
+
                 if (cur_result != null)
                 {
                     FSTEntry cur_foo = cur_result.getParent();
-                    while(cur_foo.getNextOffset() == 0)
+                    while (cur_foo.getNextOffset() == 0)
                     {
                         cur_foo = cur_foo.getParent();
                     }
                     cur_result.setNextOffset(cur_foo.getNextOffset());
                 }
+
                 if (!(i+1 < getDirChildren().Count))
                 {
                     result = cur_dir;
                 }
             }
+
             return result;
         }
 
@@ -415,7 +415,7 @@ namespace CNUS_packer.fst
             this.nextOffset = nextOffset;
         }
 
-        public string toString()
+        public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             if (getIsDir()) sb.Append("DIR: ").Append("\n");
@@ -423,16 +423,17 @@ namespace CNUS_packer.fst
             if (getIsDir()) sb.Append("       ID:").Append(getEntryOffset()).Append("\n");
             if (getIsDir()) sb.Append(" ParentID:").Append(parentOffset).Append("\n");
             if (getIsDir()) sb.Append("   NextID:").Append(nextOffset).Append("\n");
-            foreach(FSTEntry e in getChildren())
+            foreach (FSTEntry entry in getChildren())
             {
-                sb.Append(e.toString());
+                sb.Append(entry.ToString());
             }
+
             return sb.ToString();
         }
 
         public void printRecursive(int space)
         {
-            for(int i = 0; i<space; i++)
+            for(int i = 0; i < space; i++)
             {
                 Console.Write(" ");
             }
@@ -459,12 +460,12 @@ namespace CNUS_packer.fst
             {
                 if (getIsDir())
                 {
-                    Console.WriteLine("The folder \"" + getFilename() + "\" is emtpy. Please add a dummy file to it.");
+                    Console.Error.WriteLine("The folder \"" + getFilename() + "\" is emtpy. Please add a dummy file to it.");
                 }
                 else
                 {
-                    Console.WriteLine("The file \"" + getFilename() + "\" is not assigned to any content (.app).");
-                    Console.WriteLine("Please delete it or write a corresponding content rule");
+                    Console.Error.WriteLine("The file \"" + getFilename() + "\" is not assigned to any content (.app).");
+                    Console.Error.WriteLine("Please delete it or write a corresponding content rule.");
                 }
                 Environment.Exit(0);
             }
@@ -550,7 +551,7 @@ namespace CNUS_packer.fst
 
         public void calculateDecryptedHash()
         {
-            decryptedSHA1 = utils.HashUtil.hashSHA1(filepath, 0x8000);
+            decryptedSHA1 = utils.HashUtil.hashSHA1(new FileInfo(filepath), 0x8000);
         }
 
         public void setFlags(short flags)

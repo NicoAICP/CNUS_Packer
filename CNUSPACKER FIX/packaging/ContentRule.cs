@@ -1,4 +1,4 @@
-﻿namespace CNUS_packer.packaging
+namespace CNUS_packer.packaging
 {
     public class ContentRule
     {

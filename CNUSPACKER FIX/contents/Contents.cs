@@ -1,7 +1,7 @@
-﻿using CNUS_packer.crypto;
+using CNUS_packer.crypto;
 using CNUS_packer.fst;
 using CNUS_packer.packaging;
-using CNUS_packer.utils;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -48,7 +48,7 @@ namespace CNUS_packer.contents
         public Content getNewContent(ContentDetails details)
         {
             Content content = new Content();
-            content.setID(contents.Count);
+            content.ID = contents.Count;
             content.setIndex((short)contents.Count);
             if (details.GetisContent())
             {
@@ -57,7 +57,6 @@ namespace CNUS_packer.contents
             if (details.GetisEncrypted())
             {
                 content.addType(Content.TYPE_ENCRYPTED);
-
             }
             if (details.GetisHashed())
             {
@@ -67,6 +66,7 @@ namespace CNUS_packer.contents
             content.setGroupID(details.getGroupID());
             content.setParentTitleID(details.getParentTitleID());
             getContents().Add(content);
+
             return content;
         }
 
@@ -82,7 +82,8 @@ namespace CNUS_packer.contents
             {
                 buffer.Write(c.getAsData());
             }
-            return buffer.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getDataSize()
@@ -101,11 +102,12 @@ namespace CNUS_packer.contents
             MemoryStream buffer = new MemoryStream(getFSTContentHeaderDataSize());
             foreach (Content c in getContents())
             {
-                Pair<byte[], long> result = c.getFSTContentHeaderAsData(content_offset);
-                buffer.Write(result.getKey());
-                content_offset = result.getValue();
+                KeyValuePair<long, byte[]> result = c.getFSTContentHeaderAsData(content_offset);
+                content_offset = result.Key;
+                buffer.Write(result.Value);
             }
-            return buffer.ToArray();
+
+            return buffer.GetBuffer();
         }
 
         public int getFSTContentHeaderDataSize()
@@ -155,9 +157,11 @@ namespace CNUS_packer.contents
             }
             NUSpackage nuspackage = NUSPackageFactory.getPackageByContents(this);
             Encryption encryption = nuspackage.getEncryption();
-            Console.WriteLine("Packing the FST into " + fstContent.getID().ToString("00000000") + ".app");
-            string fst_path = outputDir + "/" + fstContent.getID().ToString("00000000")+".app";
-            encryption.encryptFileWithPadding(nuspackage.getFST(), fst_path, (short)getFSTContent().getID(), Content.CONTENT_FILE_PADDING);
+
+            Console.WriteLine("Packing the FST into " + fstContent.ID.ToString("X8") + ".app");
+            string fst_path = Path.Combine(outputDir, fstContent.ID.ToString("X8") + ".app");
+            encryption.encryptFileWithPadding(nuspackage.fst, fst_path, (short)getFSTContent().ID, Content.CONTENT_FILE_PADDING);
+
             Console.WriteLine("-------------");
             Console.WriteLine("Packed all contents\n\n");
         }
