@@ -1,6 +1,10 @@
 # CNUS_Packer
  Port of NUSPacker in C#
  
- DO NOT USE (yet)
+Usage:
+
+CNUSPACKER.exe -in <input_dir> -out <output_dir> -encryptKeyWith <commonKey>
+ 
+
  
  
