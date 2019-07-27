@@ -10,7 +10,7 @@ namespace CNUS_packer.fst
 {
     public class FSTEntries
     {
-        private List<FSTEntry> entries = new List<FSTEntry>();
+        private readonly List<FSTEntry> entries = new List<FSTEntry>();
 
         public FSTEntries()
         {
@@ -18,91 +18,84 @@ namespace CNUS_packer.fst
             entries.Add(root);
         }
 
-        public List<FSTEntry> getEntries()
+        public bool AddEntry(FSTEntry entry)
         {
-            return entries;
-        }
-
-        public bool addEntry(FSTEntry entry)
-        {
-            if (!entry.getIsDir())
+            if (!entry.isDir)
             {
                 Console.WriteLine("FSTEntries in root need to be directories.");
                 return false;
             }
-            getEntries().Add(entry);
+            entries.Add(entry);
             return true;
         }
 
-        public void update()
+        public void Update()
         {
-            foreach (FSTEntry entry in getEntries())
+            foreach (FSTEntry entry in entries)
             {
-                entry.update();
+                entry.Update();
             }
-            updateDirRefs();
+            UpdateDirRefs();
         }
 
-        public List<FSTEntry> getFSTEntriesByContent(Content content)
+        public List<FSTEntry> GetFSTEntriesByContent(Content content)
         {
             List<FSTEntry> result = new List<FSTEntry>();
-            foreach (FSTEntry curEntry in getEntries())
+            foreach (FSTEntry curEntry in entries)
             {
-                if (!curEntry.isNotInPackage())
+                if (!curEntry.notInPackage)
                 {
-                    result.AddRange(curEntry.getFSTEntriesByContent(content));
+                    result.AddRange(curEntry.GetFstEntriesByContent(content));
                 }
             }
 
             return result;
         }
 
-        public int getFSTEntryCount()
+        public int GetFSTEntryCount()
         {
             int count = 0;
-            foreach (FSTEntry entry in getEntries())
+            foreach (FSTEntry entry in entries)
             {
-                count += entry.getEntryCount();
+                count += entry.GetEntryCount();
             }
 
             return count;
         }
 
-        public byte[] getAsData()
+        public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(getDataSize());
-            foreach (FSTEntry entry in getEntries())
+            MemoryStream buffer = new MemoryStream(GetDataSize());
+            foreach (FSTEntry entry in entries)
             {
-                buffer.Write(entry.getAsData());
+                buffer.Write(entry.GetAsData());
             }
 
             return buffer.GetBuffer();
         }
 
-        public int getDataSize()
+        public int GetDataSize()
         {
-            return getFSTEntryCount() * 0x10;
+            return GetFSTEntryCount() * 0x10;
         }
 
-        public FSTEntry getRootEntry()
+        public FSTEntry GetRootEntry()
         {
-            List<FSTEntry> entries = getEntries();
-
             return (entries.Count == 0) ? null : entries[0];
         }
 
-        public void updateDirRefs()
+        public void UpdateDirRefs()
         {
-            List<FSTEntry> entries = getEntries();
-            if (entries.Count == 0) return;
+            if (entries.Count == 0)
+                return;
 
             FSTEntry root = entries[0];
-            root.setParentOffset(0);
-            root.setNextOffset(FST.curEntryOffset);
-            FSTEntry lastdir = root.updateDirRefs();
+            root.parentOffset = 0;
+            root.nextOffset = FST.curEntryOffset;
+            FSTEntry lastdir = root.UpdateDirRefs();
             if (lastdir != null)
             {
-                lastdir.setNextOffset(FST.curEntryOffset);
+                lastdir.nextOffset = FST.curEntryOffset;
             }
         }
     }

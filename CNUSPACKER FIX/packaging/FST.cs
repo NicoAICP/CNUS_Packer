@@ -1,47 +1,46 @@
+using System;
+using System.IO;
+using System.Text;
 using CNUS_packer.contents;
 using CNUS_packer.fst;
 using CNUS_packer.utils;
-
-using System.IO;
-using System.Text;
-using System;
 
 namespace CNUS_packer.packaging
 {
     public class FST
     {
-        private byte[] magicbytes = new byte[] { 0x46, 0x53, 0x54, 0x00 };
-        private int unknown = 0x20;
-        private int contentCount = 0;
+        private static readonly byte[] magicbytes = { 0x46, 0x53, 0x54, 0x00 };
+        private const int unknown = 0x20;
+        private int contentCount;
 
-        private Contents contents = null;
-        private FSTEntries fileEntries = null;
+        public readonly Contents contents;
+        public readonly FSTEntries fileEntries = new FSTEntries();
 
-        private static MemoryStream strings = new MemoryStream();
+        private static readonly MemoryStream strings = new MemoryStream();
 
-        public static int curEntryOffset = 0x00;
+        public static int curEntryOffset;
 
-        private byte[] alignment = null;
+        private byte[] alignment;
 
         public FST(Contents contents)
         {
             this.contents = contents;
         }
 
-        public void update()
+        public void Update()
         {
             strings.SetLength(0);
             curEntryOffset = 0;
 
-            contents.resetFileOffsets();
-            fileEntries.update();
-            contents.update(fileEntries);
-            fileEntries.getRootEntry().setEntryCount(fileEntries.getFSTEntryCount());
+            contents.ResetFileOffsets();
+            fileEntries.Update();
+            contents.Update(fileEntries);
+            fileEntries.GetRootEntry().SetEntryCount(fileEntries.GetFSTEntryCount());
 
-            contentCount = contents.getContentCount();
+            contentCount = contents.GetContentCount();
         }
 
-        public static int getStringPos()
+        public static int GetStringPosition()
         {
             return (int)strings.Position;
         }
@@ -52,9 +51,9 @@ namespace CNUS_packer.packaging
             strings.WriteByte(0x00);
         }
 
-        public byte[] getAsData()
+        public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(getDataSize());
+            MemoryStream buffer = new MemoryStream(GetDataSize());
             byte[] temp;
 
             buffer.Write(magicbytes);
@@ -65,41 +64,28 @@ namespace CNUS_packer.packaging
             Array.Reverse(temp);
             buffer.Write(temp);
             buffer.Seek(20, SeekOrigin.Current);
-            buffer.Write(contents.getFSTContentHeaderAsData());
-            buffer.Write(fileEntries.getAsData());
+            buffer.Write(contents.GetFSTContentHeaderAsData());
+            buffer.Write(fileEntries.GetAsData());
             buffer.Write(strings.ToArray());
             buffer.Write(alignment);
 
             return buffer.GetBuffer();
         }
 
-        public int getDataSize()
+        public int GetDataSize()
         {
             int size = 0;
             size += magicbytes.Length;
             size += 0x04; // unknown
             size += 0x04; // contentCount
             size += 20; // padding
-            size += contents.getFSTContentHeaderDataSize();
-            size += fileEntries.getDataSize();
+            size += contents.GetFSTContentHeaderDataSize();
+            size += fileEntries.GetDataSize();
             size += (int)strings.Position;
-            int newsize = (int)Utils.align(size, 0x8000);
+            int newsize = (int)Utils.Align(size, 0x8000);
             alignment = new byte[newsize - size];
+
             return newsize;
-        }
-
-        public FSTEntries getFSTEntries()
-        {
-            if (fileEntries == null)
-            {
-                fileEntries = new FSTEntries();
-            }
-            return fileEntries;
-        }
-
-        public Contents getContents()
-        {
-            return contents;
         }
     }
 }

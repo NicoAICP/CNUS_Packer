@@ -3,24 +3,21 @@ using System.IO;
 
 namespace CNUS_packer.utils
 {
-    public class Utils
+    public static class Utils
     {
-        public static void deleteDir(string dir)
+        public static void DeleteDir(string dir)
         {
-            foreach(string filepath in Directory.EnumerateFiles(dir))
-            {
+            foreach (string filepath in Directory.EnumerateFiles(dir))
                 File.Delete(filepath);
-            }
+
             Directory.Delete(dir);
         }
 
-        public static long align(long input, int alignment)
+        public static long Align(long input, int alignment)
         {
             long newSize = input / alignment;
             if (newSize * alignment != input)
-            {
                 newSize++;
-            }
 
             return newSize * alignment;
         }
@@ -57,7 +54,7 @@ namespace CNUS_packer.utils
             return new string(c);
         }
 
-        public static int getChunkFromStream(Stream s, byte[] output, ByteArrayBuffer overflowbuffer, long expectedSize)
+        public static int GetChunkFromStream(Stream s, byte[] output, ByteArrayBuffer overflowbuffer, long expectedSize)
         {
             int inBlockBuffer = 0;
             do
@@ -98,24 +95,16 @@ namespace CNUS_packer.utils
             return dest;
         }
 
-        public static long copyFileInto(string path, FileStream output)
-        {
-            return copyFileInto(path, output, null);
-        }
-
-        public static long copyFileInto(string path, FileStream output, string s)
+        public static void copyFileInto(string path, FileStream output, string s = null)
         {
             if (s != null)
-            {
                 Console.Write(s);
-            }
 
             long written = 0;
             using (FileStream fs = File.Open(path, FileMode.Open))
             {
                 long filesize = fs.Length;
-                int buffer_size = 0x10000;
-                byte[] buffer = new byte[buffer_size];
+                byte[] buffer = new byte[0x10000];
                 do
                 {
                     int read = fs.Read(buffer);
@@ -127,12 +116,9 @@ namespace CNUS_packer.utils
                         int progress = (int)(100 * written / filesize);
                         Console.Write("\r" + s + " : " + progress + "%");
                     }
-
                 } while (written < filesize);
                 Console.WriteLine();
             }
-
-            return written;
         }
     }
 }

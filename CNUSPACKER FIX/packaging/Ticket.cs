@@ -8,18 +8,18 @@ namespace CNUS_packer.packaging
 {
     public class Ticket
     {
-        private long titleID;
-        private Key decryptedKey = new Key();
-        private Key encryptWith = new Key();
+        public long titleID { get; }
+        public Key decryptedKey { get; }
+        public Key encryptWith { get; }
 
         public Ticket(long titleID, Key decryptedKey, Key encryptWith)
         {
-            setTitleID(titleID);
-            setDecryptedKey(decryptedKey);
-            setEncryptWith(encryptWith);
+            this.titleID = titleID;
+            this.decryptedKey = decryptedKey;
+            this.encryptWith = encryptWith;
         }
 
-        public byte[] getAsData()
+        public byte[] GetAsData()
         {
             Random rdm = new Random();
             MemoryStream buffer = new MemoryStream(0x350);
@@ -31,13 +31,13 @@ namespace CNUS_packer.packaging
             buffer.Write(Utils.HexStringToByteArray("526F6F742D434130303030303030332D58533030303030303063000000000000"));
             buffer.Seek(0x5C, SeekOrigin.Current);
             buffer.Write(Utils.HexStringToByteArray("010000"));
-            buffer.Write(getEncryptedKey().getKey());
+            buffer.Write(GetEncryptedKey().key);
             buffer.Write(Utils.HexStringToByteArray("000005"));
             randomData = new byte[0x06];
             rdm.NextBytes(randomData);
             buffer.Write(randomData);
             buffer.Seek(0x04, SeekOrigin.Current);
-            byte[] temp = BitConverter.GetBytes(getTitleID());
+            byte[] temp = BitConverter.GetBytes(titleID);
             Array.Reverse(temp);
             buffer.Write(temp);
             buffer.Write(Utils.HexStringToByteArray("00000011000000000000000000000005"));
@@ -48,45 +48,15 @@ namespace CNUS_packer.packaging
             return buffer.GetBuffer();
         }
 
-        public Key getEncryptedKey()
+        public Key GetEncryptedKey()
         {
             MemoryStream iv_buffer = new MemoryStream(0x10);
-            byte[] temp = BitConverter.GetBytes(getTitleID());
+            byte[] temp = BitConverter.GetBytes(titleID);
             Array.Reverse(temp);
             iv_buffer.Write(temp);
-            Encryption encrypt = new Encryption(getEncryptWith(), new IV(iv_buffer.GetBuffer()));
+            Encryption encrypt = new Encryption(encryptWith, new IV(iv_buffer.GetBuffer()));
 
-            return new Key(encrypt.encrypt(getDecryptedKey().getKey()));
-        }
-
-        public long getTitleID()
-        {
-            return titleID;
-        }
-
-        public void setTitleID(long titleID)
-        {
-            this.titleID = titleID;
-        }
-
-        public Key getDecryptedKey()
-        {
-            return decryptedKey;
-        }
-
-        public void setDecryptedKey(Key decryptedKey)
-        {
-            this.decryptedKey = decryptedKey;
-        }
-
-        public Key getEncryptWith()
-        {
-            return encryptWith;
-        }
-
-        public void setEncryptWith(Key encryptWith)
-        {
-            this.encryptWith = encryptWith;
+            return new Key(encrypt.Encrypt(decryptedKey.key));
         }
     }
 }

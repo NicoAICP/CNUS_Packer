@@ -9,79 +9,80 @@ namespace CNUS_packer.packaging
 {
     public class TMD
     {
-        private int signatureType = 0x00010004;
-        private byte[] signature = new byte[0x100];
-        private byte[] padding0 = new byte[0x3C];
-        private static byte[] issuer = Utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000");
+        private const int signatureType = 0x00010004;
+        private readonly byte[] signature = new byte[0x100];
+        private readonly byte[] padding0 = new byte[0x3C];
+        private static readonly byte[] issuer = Utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000");
 
-        private byte version = 0x01;
-        private byte CACRLVersion = 0x00;
-        private byte signerCRLVersion = 0x00;
-        private byte padding1 = 0x00;
+        private const byte version = 0x01;
+        private const byte CACRLVersion = 0x00;
+        private const byte signerCRLVersion = 0x00;
+        private const byte padding1 = 0x00;
 
-        private long systemVersion = 0x000500101000400AL;
+        private readonly long systemVersion;
 
-        private int titleType = 0x000100;
-        private short groupID = 0x0000;
-        private uint appType = 0x80000000;
-        private int random1 = 0;
-        private int random2 = 0;
-        private byte[] reserved = new byte[50];
-        private int accessRights = 0x0000;
-        private short titleVersion = 0x00;
-        private short contentCount = 0x00;
-        private short bootIndex = 0x00;
-        private byte[] padding3 = new byte[2];
-        public byte[] SHA2 = new byte[0x20];
+        private const int titleType = 0x000100;
+        private readonly short groupID;
+        private readonly uint appType;
+        private readonly int random1 = 0;
+        private readonly int random2 = 0;
+        private readonly byte[] reserved = new byte[50];
+        private const int accessRights = 0x0000;
+        private readonly short titleVersion;
+        private short contentCount;
+        private const short bootIndex = 0x00;
+        private readonly byte[] padding3 = new byte[2];
+        private byte[] SHA2 = new byte[0x20];
 
-        private ContentInfos contentInfos = null;
-        private Contents contents = null;
+        public readonly ContentInfos contentInfos = new ContentInfos();
+        private Contents contents = new Contents();
 
-        private Ticket ticket;
+        private readonly Ticket ticket;
 
         public TMD(AppXMLInfo appInfo, FST fst, Ticket ticket)
         {
-            setGroupID(appInfo.GetGroupID());
-            setSystemVersion(appInfo.GetOsVersion());
-            setAppType(appInfo.GetAppType());
-            setTitleVersion(appInfo.GetTitleVersion());
-            setTicket(ticket);
-            setContents(fst.getContents());
-            contentInfos = new ContentInfos();
+            groupID = appInfo.groupID;
+            systemVersion = appInfo.osVersion;
+            appType = appInfo.appType;
+            titleVersion = appInfo.titleVersion;
+            this.ticket = ticket;
+            SetContents(fst.contents);
         }
 
-        private void setContents(Contents contents)
+        private void SetContents(Contents contents)
         {
             if (contents != null)
             {
                 this.contents = contents;
-                contentCount = contents.getContentCount();
+                contentCount = contents.GetContentCount();
             }
         }
 
-        public void update()
+        public void Update()
         {
-            updateContents();
+            UpdateContents();
         }
 
-        public void updateContents()
+        private void UpdateContents()
         {
-            this.contentCount = contents.getContentCount();
+            contentCount = contents.GetContentCount();
 
-            ContentInfo firstContentInfo = new ContentInfo(contents.getContentCount());
+            ContentInfo firstContentInfo = new ContentInfo(contents.GetContentCount())
+            {
+                SHA2Hash = HashUtil.HashSHA2(contents.GetAsData())
+            };
 
-            firstContentInfo.setSHA2Hash(HashUtil.hashSHA2(contents.getAsData()));
-            getContentInfos().setContentInfo(0, firstContentInfo);
+            contentInfos.SetContentInfo(0, firstContentInfo);
         }
 
-        public void updateContentInfoHash()
+        public void UpdateContentInfoHash()
         {
-            this.SHA2 = HashUtil.hashSHA2(getContentInfos().getAsData());
+            SHA2 = HashUtil.HashSHA2(contentInfos.GetAsData());
         }
 
-        public byte[] getAsData()
+        public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(getDataSize());
+            MemoryStream buffer = new MemoryStream(GetDataSize());
             byte[] temp; // We need to write in big endian, so we're gonna Array.Reverse a lot
 
             temp = BitConverter.GetBytes(signatureType);
@@ -96,19 +97,19 @@ namespace CNUS_packer.packaging
             buffer.WriteByte(signerCRLVersion);
             buffer.WriteByte(padding1);
 
-            temp = BitConverter.GetBytes(getSystemVersion());
+            temp = BitConverter.GetBytes(systemVersion);
             Array.Reverse(temp);
             buffer.Write(temp);
-            temp = BitConverter.GetBytes(getTicket().getTitleID());
+            temp = BitConverter.GetBytes(ticket.titleID);
             Array.Reverse(temp);
             buffer.Write(temp);
             temp = BitConverter.GetBytes(titleType);
             Array.Reverse(temp);
             buffer.Write(temp);
-            temp = BitConverter.GetBytes(getGroupID());
+            temp = BitConverter.GetBytes(groupID);
             Array.Reverse(temp);
             buffer.Write(temp);
-            temp = BitConverter.GetBytes(getAppType());
+            temp = BitConverter.GetBytes(appType);
             Array.Reverse(temp);
             buffer.Write(temp);
             temp = BitConverter.GetBytes(random1);
@@ -121,7 +122,7 @@ namespace CNUS_packer.packaging
             temp = BitConverter.GetBytes(accessRights);
             Array.Reverse(temp);
             buffer.Write(temp);
-            temp = BitConverter.GetBytes(getTitleVersion());
+            temp = BitConverter.GetBytes(titleVersion);
             Array.Reverse(temp);
             buffer.Write(temp);
             temp = BitConverter.GetBytes(contentCount);
@@ -134,105 +135,30 @@ namespace CNUS_packer.packaging
             buffer.Write(padding3);
             buffer.Write(SHA2);
 
-            buffer.Write(getContentInfos().getAsData());
-            buffer.Write(getContents().getAsData());
+            buffer.Write(contentInfos.GetAsData());
+            buffer.Write(contents.GetAsData());
 
             return buffer.GetBuffer();
         }
 
-        public int getDataSize()
+        private int GetDataSize()
         {
-            int staticSize = 0x204;
-            int contentInfoSize = contentInfos.getDataSize();
-            int contentsSize = contents.getDataSize();
+            const int staticSize = 0x204;
+            int contentInfoSize = ContentInfos.GetDataSize();
+            int contentsSize = contents.GetDataSize();
 
             return staticSize + contentInfoSize + contentsSize;
         }
 
-        public ContentInfos getContentInfos()
-        {
-            if (contentInfos == null)
-            {
-                contentInfos = new ContentInfos();
-            }
-
-            return contentInfos;
-        }
-
-        public void setContentInfos(ContentInfos contentInfos)
-        {
-            this.contentInfos = contentInfos;
-        }
-
-        public Contents getContents()
-        {
-            if (contents == null)
-            {
-                contents = new Contents();
-            }
-
-            return contents;
-        }
-
-        public Ticket getTicket()
-        {
-            return ticket;
-        }
-
-        public void setTicket(Ticket ticket)
-        {
-            this.ticket = ticket;
-        }
-
-        public Encryption getEncryption()
+        public Encryption GetEncryption()
         {
             MemoryStream iv_buffer = new MemoryStream(0x10);
-            byte[] temp = BitConverter.GetBytes(getTicket().getTitleID());
+            byte[] temp = BitConverter.GetBytes(ticket.titleID);
             Array.Reverse(temp);
             iv_buffer.Write(temp);
-            Key key = getTicket().getDecryptedKey();
+            Key key = ticket.decryptedKey;
 
             return new Encryption(key, new IV(iv_buffer.GetBuffer()));
-        }
-
-        public long getSystemVersion()
-        {
-            return systemVersion;
-        }
-
-        public void setSystemVersion(long systemVersion)
-        {
-            this.systemVersion = systemVersion;
-        }
-
-        public short getGroupID()
-        {
-            return groupID;
-        }
-
-        public void setGroupID(short groupID)
-        {
-            this.groupID = groupID;
-        }
-
-        public uint getAppType()
-        {
-            return appType;
-        }
-
-        public void setAppType(uint appType)
-        {
-            this.appType = appType;
-        }
-
-        public short getTitleVersion()
-        {
-            return titleVersion;
-        }
-
-        public void setTitleVersion(short titleVersion)
-        {
-            this.titleVersion = titleVersion;
         }
     }
 }

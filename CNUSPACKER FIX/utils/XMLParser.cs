@@ -1,52 +1,55 @@
+using System;
 using System.Xml;
 
 namespace CNUS_packer.utils
 {
     public class XMLParser
     {
-        private XmlDocument document = new XmlDocument();
+        private readonly XmlDocument document = new XmlDocument();
 
-        public void loadDocument(string path)
+        public void LoadDocument(string path)
         {
             document.Load(path);
         }
 
-        public AppXMLInfo getAppXMLInfo()
+        public AppXMLInfo GetAppXMLInfo()
         {
-            AppXMLInfo appxmlinfo = new AppXMLInfo();
-            appxmlinfo.SetOsVersion(getValueOfElementAsLongHex("app/os_version"));
-            appxmlinfo.SetTitleID(getValueOfElementAsLongHex("app/title_id"));
-            appxmlinfo.SetTitleVersion((short)getValueOfElementAsLongHex("app/title_version"));
-            appxmlinfo.SetSdkVersion(getValueOfElementAsUnsignedInt("app/sdk_version"));
-            appxmlinfo.SetAppType((uint)getValueOfElementAsLongHex("app/app_type"));
-            appxmlinfo.SetGroupID((short)getValueOfElementAsLongHex("app/group_id"));
-            appxmlinfo.SetOSMask(getValueOfElementAsByteArray("app/os_mask"));
-            appxmlinfo.SetCommon_id(getValueOfElementAsLongHex("app/common_id"));
+            AppXMLInfo appxmlinfo = new AppXMLInfo
+            {
+                osVersion = GetValueOfElementAsLongHex("app/os_version"),
+                titleID = GetValueOfElementAsLongHex("app/title_id"),
+                titleVersion = (short) GetValueOfElementAsLongHex("app/title_version"),
+                sdkVersion = GetValueOfElementAsUnsignedInt("app/sdk_version"),
+                appType = (uint) GetValueOfElementAsLongHex("app/app_type"),
+                groupID = (short) GetValueOfElementAsLongHex("app/group_id"),
+                osMask = GetValueOfElementAsByteArray("app/os_mask"),
+                common_id = GetValueOfElementAsLongHex("app/common_id")
+            };
 
             return appxmlinfo;
         }
 
-        public uint getValueOfElementAsUnsignedInt(string element)
+        private uint GetValueOfElementAsUnsignedInt(string element)
         {
-            return uint.Parse(getValueOfElement(element) ?? "0");
+            return uint.Parse(GetValueOfElement(element) ?? "0");
         }
 
-        public long getValueOfElementAsLongHex(string element)
+        private long GetValueOfElementAsLongHex(string element)
         {
-            return System.Convert.ToInt64(getValueOfElement(element) ?? "0", 16);
+            return Convert.ToInt64(GetValueOfElement(element) ?? "0", 16);
         }
 
-        public byte[] getValueOfElementAsByteArray(string element)
+        private byte[] GetValueOfElementAsByteArray(string element)
         {
-            return Utils.HexStringToByteArray(getValueOfElement(element) ?? "");
+            return Utils.HexStringToByteArray(GetValueOfElement(element) ?? "");
         }
 
-        public string getValueOfElement(string element)
+        private string GetValueOfElement(string element)
         {
             XmlNode node = document.SelectSingleNode(element);
             if (node == null)
             {
-                System.Console.WriteLine("No xml entry for field \"" + element + "\", default value will be used.");
+                Console.WriteLine("No xml entry for field \"" + element + "\", default value will be used.");
                 return null;
             }
 

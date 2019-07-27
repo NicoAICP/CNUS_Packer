@@ -3,25 +3,11 @@ namespace CNUS_packer.crypto
     public class IV
     {
         private const int LENGTH = 0x10;
-        private byte[] iv = new byte[LENGTH];
+        public readonly byte[] iv = new byte[LENGTH];
 
-        public IV()
+        public IV(byte[] iv)
         {
-        }
-
-        public IV(byte[] array)
-        {
-            setIV(array);
-        }
-
-        public byte[] getIV()
-        {
-            return iv;
-        }
-
-        public void setIV(byte[] iv)
-        {
-            if (iv != null && iv.Length == getIV().Length)
+            if (iv != null && iv.Length == LENGTH)
             {
                 this.iv = iv;
             }

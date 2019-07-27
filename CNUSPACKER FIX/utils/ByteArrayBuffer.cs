@@ -2,8 +2,8 @@ namespace CNUS_packer.utils
 {
     public class ByteArrayBuffer
     {
-        public byte[] buffer;
-        int lengthOfDataInBuffer;
+        public byte[] buffer { get; }
+        private int lengthOfDataInBuffer;
 
         public ByteArrayBuffer(int length)
         {

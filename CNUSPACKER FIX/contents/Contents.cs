@@ -10,99 +10,63 @@ namespace CNUS_packer.contents
 {
     public class Contents
     {
-        private List<Content> contents = new List<Content>();
-        private Content fstContent;
+        public readonly List<Content> contents = new List<Content>();
+        public readonly Content fstContent;
 
         public Contents()
         {
-            setFSTContent(getNewContent());
+            ContentDetails details = new ContentDetails(false, 0, 0, 0);
+            fstContent = GetNewContent(details);
+            fstContent.isFSTContent = true;
         }
 
-        public Content getFSTContent()
+        public Content GetNewContent(ContentDetails details)
         {
-            return this.fstContent;
-        }
-
-        public void setFSTContent(Content content)
-        {
-            this.fstContent = content;
-            content.setFSTContent(true);
-        }
-
-        public Content GetContent()
-        {
-            return this.fstContent;
-        }
-
-        public Content getNewContent()
-        {
-            return getNewContent(false);
-        }
-
-        public Content getNewContent(bool isHashed)
-        {
-            ContentDetails details = new ContentDetails(isHashed, 0, 0, 0);
-            return getNewContent(details);
-        }
-
-        public Content getNewContent(ContentDetails details)
-        {
-            Content content = new Content();
-            content.ID = contents.Count;
-            content.setIndex((short)contents.Count);
-            if (details.GetisContent())
+            Content content = new Content
             {
-                content.addType(Content.TYPE_CONTENT);
-            }
-            if (details.GetisEncrypted())
+                ID = contents.Count,
+                index = (short) contents.Count,
+                entriesFlags = details.entriesFlag,
+                groupID = details.groupID,
+                parentTitleID = details.parentTitleID
+            };
+            if (details.isHashed)
             {
-                content.addType(Content.TYPE_ENCRYPTED);
+                content.AddType(Content.TYPE_HASHED);
             }
-            if (details.GetisHashed())
-            {
-                content.addType(Content.TYPE_HASHED);
-            }
-            content.setEntriesFlags(details.getEntriesFlag());
-            content.setGroupID(details.getGroupID());
-            content.setParentTitleID(details.getParentTitleID());
-            getContents().Add(content);
+            contents.Add(content);
 
             return content;
         }
 
-        public short getContentCount()
+        public short GetContentCount()
         {
-            return (short)getContents().Count;
+            return (short) contents.Count;
         }
 
-        public byte[] getAsData()
+        public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(getDataSize());
-            foreach (Content c in getContents())
+            MemoryStream buffer = new MemoryStream(GetDataSize());
+            foreach (Content c in contents)
             {
-                buffer.Write(c.getAsData());
+                buffer.Write(c.GetAsData());
             }
 
             return buffer.GetBuffer();
         }
 
-        public int getDataSize()
+        public int GetDataSize()
         {
-            int size = 0x00;
-            foreach (Content c in getContents())
-            {
-                size += c.getDataSize();
-            }
-            return size;
+            return GetContentCount() * Content.staticDataSize;
         }
 
-        public byte[] getFSTContentHeaderAsData()
+        public byte[] GetFSTContentHeaderAsData()
         {
             long content_offset = 0;
-            MemoryStream buffer = new MemoryStream(getFSTContentHeaderDataSize());
-            foreach (Content c in getContents())
+            MemoryStream buffer = new MemoryStream(GetFSTContentHeaderDataSize());
+            foreach (Content c in contents)
             {
-                KeyValuePair<long, byte[]> result = c.getFSTContentHeaderAsData(content_offset);
+                KeyValuePair<long, byte[]> result = c.GetFSTContentHeaderAsData(content_offset);
                 content_offset = result.Key;
                 buffer.Write(result.Value);
             }
@@ -110,63 +74,48 @@ namespace CNUS_packer.contents
             return buffer.GetBuffer();
         }
 
-        public int getFSTContentHeaderDataSize()
+        public int GetFSTContentHeaderDataSize()
         {
-            int size = 0;
-            foreach (Content c in getContents())
-            {
-                size += c.getFSTContentHeaderDataSize();
-            }
-            return size;
+            return GetContentCount() * Content.staticFSTContentHeaderDataSize;
         }
 
-        public List<Content> getContents()
+        public void ResetFileOffsets()
         {
-            if (contents == null)
+            foreach (Content c in contents)
             {
-                contents = new List<Content>();
-            }
-            return contents;
-        }
-
-        public void resetFileOffsets()
-        {
-            foreach (Content c in getContents())
-            {
-                c.resetFileOffsets();
+                c.ResetFileOffset();
             }
         }
 
-        public void update(FSTEntries fileEntries)
+        public void Update(FSTEntries fileEntries)
         {
-
-            foreach (Content c in getContents())
+            foreach (Content c in contents)
             {
-                c.update(fileEntries.getFSTEntriesByContent(c));
+                c.Update(fileEntries.GetFSTEntriesByContent(c));
             }
         }
 
-        public void packContents(string outputDir)
+        public void PackContents(string outputDir)
         {
-            foreach(Content c in getContents())
+            foreach (Content c in contents)
             {
-                if (!c.equals(getFSTContent()))
+                if (!c.Equals(fstContent))
                 {
-                    c.packContentToFile(outputDir);
+                    c.PackContentToFile(outputDir);
                 }
             }
-            NUSpackage nuspackage = NUSPackageFactory.getPackageByContents(this);
-            Encryption encryption = nuspackage.getEncryption();
+            NUSpackage nuspackage = NUSPackageFactory.GetPackageByContents(this);
+            Encryption encryption = nuspackage.GetEncryption();
 
             Console.WriteLine("Packing the FST into " + fstContent.ID.ToString("X8") + ".app");
             string fst_path = Path.Combine(outputDir, fstContent.ID.ToString("X8") + ".app");
-            encryption.encryptFileWithPadding(nuspackage.fst, fst_path, (short)getFSTContent().ID, Content.CONTENT_FILE_PADDING);
+            encryption.EncryptFileWithPadding(nuspackage.fst, fst_path, (short)fstContent.ID, Content.CONTENT_FILE_PADDING);
 
             Console.WriteLine("-------------");
             Console.WriteLine("Packed all contents\n\n");
         }
 
-        public void deleteContent(Content cur_content)
+        public void DeleteContent(Content cur_content)
         {
             contents.Remove(cur_content);
         }

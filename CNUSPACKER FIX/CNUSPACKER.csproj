@@ -7,9 +7,4 @@
     <RootNamespace>CNUSPACKER_FIX</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="4.0.0" />
-    <PackageReference Include="Resource.Embedder" Version="2.0.1" />
-  </ItemGroup>
-
 </Project>

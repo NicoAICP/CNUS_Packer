@@ -5,9 +5,10 @@ namespace CNUS_packer.contents
 {
     public class ContentInfo
     {
-        private short indexOffset = 0x00;
-        private short commandCount = 0x0B;
-        private byte[] SHA2hash = null;
+        public const int staticDataSize = 0x24;
+        private readonly short indexOffset;
+        private readonly short contentCount;
+        public byte[] SHA2Hash { get; set; }
 
         public ContentInfo() : this(0)
         {
@@ -20,64 +21,25 @@ namespace CNUS_packer.contents
         public ContentInfo(short indexOffset, short contentCount)
         {
             this.indexOffset = indexOffset;
-            this.commandCount = contentCount;
+            this.contentCount = contentCount;
         }
 
-        public byte[] getAsData()
+        public byte[] GetAsData()
         {
             MemoryStream buffer = new MemoryStream(0x24);
             byte[] temp;
 
-            temp = BitConverter.GetBytes(getIndexOffset());
+            temp = BitConverter.GetBytes(indexOffset);
             Array.Reverse(temp);
             buffer.Write(temp);
 
-            temp = BitConverter.GetBytes(getCommandCount());
+            temp = BitConverter.GetBytes(contentCount);
             Array.Reverse(temp);
             buffer.Write(temp);
 
-            buffer.Write(getSHA2Hash());
+            buffer.Write(SHA2Hash);
 
             return buffer.GetBuffer();
-        }
-        public static int getDataSizeStatic()
-        {
-            return 0x24;
-        }
-
-        public int getDataSize()
-        {
-            return 0x24;
-        }
-
-        public short getCommandCount()
-        {
-            return commandCount;
-        }
-
-        public short getIndexOffset()
-        {
-            return indexOffset;
-        }
-
-        public void setIndexOffset(short indexOffset)
-        {
-            this.indexOffset = indexOffset;
-        }
-
-        public byte[] getSHA2Hash()
-        {
-            return SHA2hash;
-        }
-
-        public void setSHA2Hash(byte[] SHA2Hash)
-        {
-            this.SHA2hash = SHA2Hash;
-        }
-
-        public void setCommandCount(short commandCount)
-        {
-            this.commandCount = commandCount;
         }
     }
 }

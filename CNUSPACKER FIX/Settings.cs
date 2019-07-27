@@ -1,6 +1,6 @@
 namespace CNUS_packer
 {
-    public class Settings
+    public static class Settings
     {
         public const short groupid_code = 0x0000;
         public const short groupid_meta = 0x0400;

@@ -1,15 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using CNUS_packer.crypto;
 using CNUS_packer.packaging;
 using CNUS_packer.utils;
 
-using System;
-using System.IO;
-
 namespace CNUS_packer
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Console.WriteLine("CNUS_Packer v0.01 by NicoAICP [C# Port of NUSPacker by timogus]\n\n");
 
@@ -32,9 +32,10 @@ namespace CNUS_packer
             {
                 Console.WriteLine("Please provide at least the in and out parameter");
 
-                showHelp();
+                ShowHelp();
                 Environment.Exit(0);
             }
+
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i].Equals("-in"))
@@ -108,7 +109,7 @@ namespace CNUS_packer
                 }
                 else if (args[i].Equals("-help"))
                 {
-                    showHelp();
+                    ShowHelp();
                     Environment.Exit(0);
                 }
             }
@@ -118,23 +119,26 @@ namespace CNUS_packer
                 Console.WriteLine("Invalid input dir (" + Path.GetFullPath(inputPath) +"): It's missing either the code, content or meta folder");
                 Environment.Exit(0);
             }
-            AppXMLInfo appinfo = new AppXMLInfo();
-            appinfo.SetTitleID(titleID);
-            appinfo.SetGroupID((short)((titleID >> 8) & 0xFFFF));
-            appinfo.SetAppType(appType);
-            appinfo.SetOsVersion(osVersion);
-            appinfo.SetTitleVersion(titleVersion);
 
-            if(encryptionKey == "" || encryptionKey.Length != 32)
+            AppXMLInfo appinfo = new AppXMLInfo
+            {
+                titleID = titleID,
+                groupID = (short) ((titleID >> 8) & 0xFFFF),
+                appType = appType,
+                osVersion = osVersion,
+                titleVersion = titleVersion
+            };
+
+            if (encryptionKey == "" || encryptionKey.Length != 32)
             {
                 encryptionKey = Settings.defaultEncryptionKey;
                 Console.WriteLine("Empty or invalid encryption provided. Will use " + encryptionKey + " instead");
             }
             Console.WriteLine();
-            if(encryptKeyWith == "" || encryptKeyWith.Length != 32)
+            if (encryptKeyWith == "" || encryptKeyWith.Length != 32)
             {
                 Console.WriteLine("Will try to load the encryptionWith key from the file \"" + Settings.encyptWithFile + "\".");
-                encryptKeyWith = loadEncryptWithKey();
+                encryptKeyWith = LoadEncryptWithKey();
             }
             if (encryptKeyWith == "" || encryptKeyWith.Length != 32)
             {
@@ -154,13 +158,13 @@ namespace CNUS_packer
                 {
 
                     XMLParser parser = new XMLParser();
-                    parser.loadDocument(appxml);
+                    parser.LoadDocument(appxml);
 
-                    appinfo = parser.getAppXMLInfo();
+                    appinfo = parser.GetAppXMLInfo();
                 }
                 catch (Exception  e)
                 {
-                    Console.WriteLine("Error while parsing the app.xml from path \"" + Settings.pathToAppXml + "\": " + e.ToString());
+                    Console.WriteLine("Error while parsing the app.xml from path \"" + Settings.pathToAppXml + "\": " + e);
                 }
             }
             else
@@ -168,8 +172,8 @@ namespace CNUS_packer
                 Console.WriteLine("Skipped app.xml parsing");
             }
 
-            short content_group = appinfo.GetGroupID();
-            titleID = appinfo.GetTitleID();
+            short content_group = appinfo.groupID;
+            titleID = appinfo.titleID;
 
             long parentID = titleID & ~0x0000000F00000000L;
             Console.WriteLine();
@@ -177,27 +181,27 @@ namespace CNUS_packer
             Console.WriteLine("Input            : \"" + inputPath + "\"");
             Console.WriteLine("Output           : \"" + outputPath + "\"");
 
-            Console.WriteLine("TitleID          : " + appinfo.GetTitleID().ToString("X16"));
-            Console.WriteLine("GroupID          : " + appinfo.GetGroupID().ToString("X4"));
+            Console.WriteLine("TitleID          : " + appinfo.titleID.ToString("X16"));
+            Console.WriteLine("GroupID          : " + appinfo.groupID.ToString("X4"));
             Console.WriteLine("ParentID         : " + parentID.ToString("X16"));
-            Console.WriteLine("AppType          : " + appinfo.GetAppType().ToString("X8"));
-            Console.WriteLine("OSVersion        : " + appinfo.GetOsVersion().ToString("X16"));
+            Console.WriteLine("AppType          : " + appinfo.appType.ToString("X8"));
+            Console.WriteLine("OSVersion        : " + appinfo.osVersion.ToString("X16"));
             Console.WriteLine("Encryption key   : " + encryptionKey);
             Console.WriteLine("Encrypt key with : " + encryptKeyWith);
             Console.WriteLine();
 
             Console.WriteLine("---");
-            ContentRules rules = ContentRules.getCommonRules(content_group, parentID);
+            List<ContentRule> rules = ContentRule.GetCommonRules(content_group, parentID);
 
             NusPackageConfiguration config = new NusPackageConfiguration(inputPath, appinfo, new Key(encryptionKey), new Key(encryptKeyWith), rules);
-            NUSpackage nuspackage = NUSPackageFactory.createNewPackage(config);
+            NUSpackage nuspackage = NUSPackageFactory.CreateNewPackage(config);
             nuspackage.packContents(outputPath);
-            nuspackage.printTicketInfos();
+            nuspackage.PrintTicketInfos();
 
-            Utils.deleteDir(Settings.tmpDir);
+            Utils.DeleteDir(Settings.tmpDir);
         }
 
-        public static string loadEncryptWithKey()
+        private static string LoadEncryptWithKey()
         {
             string encryptPath = Settings.encyptWithFile;
             if (!File.Exists(encryptPath)) return "";
@@ -218,7 +222,7 @@ namespace CNUS_packer
             return key;
         }
 
-        private static void showHelp()
+        private static void ShowHelp()
         {
             Console.WriteLine("help:");
             Console.WriteLine("-in             ; is the dir where you have your decrypted data. Make this pointing to the root folder with the folder code,content and meta.");

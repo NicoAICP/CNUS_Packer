@@ -7,15 +7,11 @@ namespace CNUS_packer.contents
     {
         private const int contentInfoCount = 0x40;
 
-        private ContentInfo[] contentinfos = new ContentInfo[contentInfoCount];
+        private readonly ContentInfo[] contentinfos = new ContentInfo[contentInfoCount];
 
-        public ContentInfos()
+        public void SetContentInfo(int index, ContentInfo contentInfo)
         {
-        }
-
-        public void setContentInfo(int index, ContentInfo contentInfo)
-        {
-            if (index < 0 || index >= contentinfos.Length)
+            if (index < 0 || index >= contentInfoCount)
             {
                 throw new Exception("Error on setting ContentInfo, index " + index + " invalid");
             }
@@ -23,34 +19,32 @@ namespace CNUS_packer.contents
             contentinfos[index] = contentInfo ?? throw new Exception("Error on setting ContentInfo, ContentInfo is null.");
         }
 
-        public ContentInfo getContentInfo(int index)
+        public ContentInfo GetContentInfo(int index)
         {
-            if (index < 0 || index >= contentinfos.Length)
+            if (index < 0 || index >= contentInfoCount)
             {
                 throw new Exception("Error on getting ContentInfo, index " + index + " invalid");
             }
-            if (contentinfos[index] == null)
-            {
-                contentinfos[index] = new ContentInfo();
-            }
-            return contentinfos[index];
+
+            return contentinfos[index] ?? (contentinfos[index] = new ContentInfo());
         }
 
-        public byte[] getAsData()
+        public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(ContentInfo.getDataSizeStatic() * contentinfos.Length);
-            for (int i = 0; i < contentinfos.Length; i++)
+            MemoryStream buffer = new MemoryStream(ContentInfo.staticDataSize * contentInfoCount);
+            for (int i = 0; i < contentInfoCount; i++)
             {
-                if (contentinfos[i] == null) contentinfos[i] = new ContentInfo();
-                buffer.Write(contentinfos[i].getAsData());
+                if (contentinfos[i] == null)
+                    contentinfos[i] = new ContentInfo();
+                buffer.Write(contentinfos[i].GetAsData());
             }
 
             return buffer.GetBuffer();
         }
 
-        public int getDataSize()
+        public static int GetDataSize()
         {
-            return contentinfos.Length * ContentInfo.getDataSizeStatic();
+            return contentInfoCount * ContentInfo.staticDataSize;
         }
     }
 }

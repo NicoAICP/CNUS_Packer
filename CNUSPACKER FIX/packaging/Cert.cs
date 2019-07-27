@@ -4,9 +4,9 @@ using System.IO;
 
 namespace CNUS_packer.packaging
 {
-    public class Cert
+    public static class Cert
     {
-        public static byte[] getCertAsData()
+        public static byte[] GetCertAsData()
         {
             MemoryStream buffer = new MemoryStream(0xA00);
 
