@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using CNUSPACKER.contents;
 using CNUSPACKER.packaging;
@@ -78,15 +79,6 @@ namespace CNUSPACKER.fst
             this.content = content;
         }
 
-        public void SetContentRecursive(Content content)
-        {
-            SetContent(content);
-            foreach(FSTEntry entry in children)
-            {
-                entry.SetContentRecursive(content);
-            }
-        }
-
         public long GetFileSize()
         {
             return !IsFile() ? 0 : fileSize;
@@ -97,7 +89,7 @@ namespace CNUSPACKER.fst
             return !(isDir || notInPackage);
         }
 
-        private byte getType()
+        private byte GetTypeAsByte()
         {
             byte type = 0;
             if (isDir)
@@ -124,7 +116,7 @@ namespace CNUSPACKER.fst
             }
             else
             {
-                buffer.WriteByte(getType());
+                buffer.WriteByte(GetTypeAsByte());
                 buffer.WriteByte((byte)((nameOffset >> 16) & 0xFF)); // We need to write a 24bit int (big endian)
                 buffer.WriteByte((byte)((nameOffset >> 8) & 0xFF));
                 buffer.WriteByte((byte)(nameOffset & 0xFF));
@@ -193,7 +185,7 @@ namespace CNUSPACKER.fst
         public void Update()
         {
             SetNameOffset(FST.GetStringPosition());
-            FST.addString(filename);
+            FST.AddString(filename);
             entryOffset = FST.curEntryOffset;
             FST.curEntryOffset++;
 
@@ -264,12 +256,9 @@ namespace CNUSPACKER.fst
             return sb.ToString();
         }
 
-        public void PrintRecursive(int space)
+        public void PrintRecursive(int space, int level = 0)
         {
-            for (int i = 0; i < space; i++)
-            {
-                Console.Write(" ");
-            }
+            Console.Write(new string(' ', space * level));
             Console.Write(filename);
             if (notInPackage)
             {
@@ -278,15 +267,15 @@ namespace CNUSPACKER.fst
             Console.WriteLine();
             foreach (FSTEntry child in GetDirChildren(true))
             {
-                child.PrintRecursive(space + 1);
+                child.PrintRecursive(space, level + 1);
             }
             foreach (FSTEntry child in GetFileChildren(true))
             {
-                child.PrintRecursive(space + 1);
+                child.PrintRecursive(space, level + 1);
             }
         }
 
-        public List<FSTEntry> GetFstEntriesByContent(Content content)
+        public List<FSTEntry> GetFSTEntriesByContent(Content content)
         {
             List<FSTEntry> entries = new List<FSTEntry>();
             if(this.content == null)
@@ -309,7 +298,7 @@ namespace CNUSPACKER.fst
 
             foreach (FSTEntry child in children)
             {
-                entries.AddRange(child.GetFstEntriesByContent(content));
+                entries.AddRange(child.GetFSTEntriesByContent(content));
             }
             return entries;
         }

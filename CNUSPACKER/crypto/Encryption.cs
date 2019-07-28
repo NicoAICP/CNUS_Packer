@@ -26,7 +26,7 @@ namespace CNUSPACKER.crypto
                 MemoryStream input = new MemoryStream(fst.GetAsData());
                 MemoryStream ivstrm = new MemoryStream(0x10);
                 byte[] temp = BitConverter.GetBytes(contentID);
-                Array.Reverse(temp);
+                Array.Reverse(temp); // we need to write in big endian
                 ivstrm.Write(temp);
                 IV iv = new IV(ivstrm.GetBuffer());
 
@@ -41,7 +41,7 @@ namespace CNUSPACKER.crypto
             {
                 MemoryStream ivstrm = new MemoryStream(0x10);
                 byte[] temp = BitConverter.GetBytes((short)content.ID);
-                Array.Reverse(temp); // we need to write in big-endian
+                Array.Reverse(temp); // we need to write in big endian
                 ivstrm.Write(temp);
                 IV iv = new IV(ivstrm.GetBuffer());
 
@@ -49,110 +49,75 @@ namespace CNUSPACKER.crypto
             }
         }
 
-        private void EncryptSingleFile(Stream input, FileStream output, long length, IV iv, int BLOCKSIZE)
+        private void EncryptSingleFile(Stream input, FileStream output, long inputLength, IV iv, int blockSize)
         {
-            long inputSize = length;
-            long targetSize = Utils.Align(inputSize, BLOCKSIZE);
+            aes.IV = iv.iv;
+            long targetSize = Utils.Align(inputLength, blockSize);
 
-            byte[] blockBuffer = new byte[BLOCKSIZE];
-            int inBlockBufferRead;
-
-            long cur_position = 0;
-            ByteArrayBuffer overflow = new ByteArrayBuffer(BLOCKSIZE);
-
-            bool first = true;
+            int cur_position = 0;
             do
             {
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    iv = null;
-                }
+                byte[] blockBuffer = new byte[blockSize];
 
-                if (cur_position + BLOCKSIZE > inputSize)
-                {
-                    long expectedSize = inputSize - cur_position;
-                    MemoryStream buffer = new MemoryStream(BLOCKSIZE);
-                    inBlockBufferRead = Utils.GetChunkFromStream(input, blockBuffer, overflow, expectedSize);
+                input.Read(blockBuffer, 0, blockSize);
+                blockBuffer = Encrypt(blockBuffer);
 
-                    buffer.Write(Utils.copyOfRange(blockBuffer, 0, inBlockBufferRead));
-                    blockBuffer = buffer.GetBuffer();
-                    inBlockBufferRead = BLOCKSIZE;
-                }
-                else
-                {
-                    inBlockBufferRead = Utils.GetChunkFromStream(input, blockBuffer, overflow, BLOCKSIZE);
-                }
+                aes.IV = Utils.CopyOfRange(blockBuffer, blockSize - 16, blockSize);
 
-                byte[] output_byte = EncryptChunk(blockBuffer, inBlockBufferRead, iv);
-
-                aes.IV = Utils.copyOfRange(output_byte, BLOCKSIZE - 16, BLOCKSIZE);
-
-                cur_position += inBlockBufferRead;
-
-                output.Write(output_byte, 0, inBlockBufferRead);
-
-            } while (cur_position < targetSize && (inBlockBufferRead == BLOCKSIZE));
+                cur_position += blockSize;
+                output.Write(blockBuffer);
+            } while (cur_position < targetSize);
         }
 
-        public void EncryptFileHashed(FileInfo file, Content content, string output_filename, ContentHashes hashes)
+        public void EncryptFileHashed(FileInfo inputFile, Content content, string outputFilename, ContentHashes hashes)
         {
-            using (FileStream ins = file.Open(FileMode.Open))
-            using (FileStream outs = File.Open(output_filename, FileMode.OpenOrCreate))
+            using (FileStream ins = inputFile.Open(FileMode.Open))
+            using (FileStream outs = File.Open(outputFilename, FileMode.OpenOrCreate))
             {
-                EncryptFileHashed(ins, outs, file.Length, content, hashes);
+                EncryptFileHashed(ins, outs, inputFile.Length, content, hashes);
                 content.encryptedFileSize = outs.Length;
             }
         }
 
         private void EncryptFileHashed(FileStream input, FileStream output, long length, Content content, ContentHashes hashes)
         {
-            const int BLOCKSIZE = 0x10000;
-            const int HASHBLOCKSIZE = 0xFC00;
+            const int hashBlockSize = 0xFC00;
 
-            byte[] buffer = new byte[HASHBLOCKSIZE];
-            ByteArrayBuffer overflowbuffer = new ByteArrayBuffer(HASHBLOCKSIZE);
+            byte[] buffer = new byte[hashBlockSize];
             int read;
             int block = 0;
             do
             {
-                read = Utils.GetChunkFromStream(input, buffer, overflowbuffer, HASHBLOCKSIZE);
+                read = input.Read(buffer, 0, hashBlockSize);
 
-                byte[] output_byte_arr = EncryptChunkHashed(buffer, block, hashes, content.ID);
-                if (output_byte_arr.Length != BLOCKSIZE)
-                    Console.WriteLine("WTF?");
-                output.Write(output_byte_arr);
+                output.Write(EncryptChunkHashed(buffer, block, hashes, content.ID));
 
                 block++;
-                int progress = (int)(100 * block * HASHBLOCKSIZE / length);
                 if (block % 100 == 0)
                 {
-                    Console.WriteLine("\rEncryption: " + progress + "%");
+                    Console.WriteLine("\rEncryption: " + 100 * block * hashBlockSize / length + "%");
                 }
-            } while (read == HASHBLOCKSIZE);
+            } while (read == hashBlockSize);
             Console.WriteLine("\rEncryption: 100%");
         }
 
         private byte[] EncryptChunkHashed(byte[] buffer, int block, ContentHashes hashes, int content_id)
         {
-            MemoryStream ivstrm = new MemoryStream(16);
+            MemoryStream iv_buffer = new MemoryStream(16);
             byte[] temp = BitConverter.GetBytes((short)content_id);
-            Array.Reverse(temp); // we need to write big-endian
-            ivstrm.Write(temp);
-            IV iv = new IV(ivstrm.GetBuffer());
+            Array.Reverse(temp); // we need to write in big endian
+            iv_buffer.Write(temp);
+            aes.IV = iv_buffer.GetBuffer();
             byte[] decryptedHashes = hashes.GetHashForBlock(block);
             decryptedHashes[1] ^= (byte)content_id;
 
-            byte[] encryptedhashes = EncryptChunk(decryptedHashes, 0x0400, iv);
+            byte[] encryptedhashes = EncryptChunk(decryptedHashes, 0x0400);
             decryptedHashes[1] ^= (byte)content_id;
             int iv_start = (block % 16) * 20;
 
-            iv = new IV(Utils.copyOfRange(decryptedHashes, iv_start, iv_start + 16));
+            aes.IV = Utils.CopyOfRange(decryptedHashes, iv_start, iv_start + 16);
 
-            byte[] encryptedContent = EncryptChunk(buffer, 0xFC00, iv);
+            byte[] encryptedContent = EncryptChunk(buffer, 0xFC00);
             MemoryStream output_stream = new MemoryStream(0x10000);
             output_stream.Write(encryptedhashes);
             output_stream.Write(encryptedContent);
@@ -160,11 +125,8 @@ namespace CNUSPACKER.crypto
             return output_stream.GetBuffer();
         }
 
-        private byte[] EncryptChunk(byte[] blockBuffer, int BLOCKSIZE, IV iv)
+        private byte[] EncryptChunk(byte[] blockBuffer, int BLOCKSIZE)
         {
-            if (iv != null)
-                aes.IV = iv.iv;
-
             return Encrypt(blockBuffer, 0, BLOCKSIZE);
         }
 

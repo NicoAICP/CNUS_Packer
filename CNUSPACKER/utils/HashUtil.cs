@@ -24,40 +24,17 @@ namespace CNUSPACKER.utils
             SHA1 sha1 = SHA1.Create();
             using (FileStream fs = file.Open(FileMode.Open))
             {
-                return Hash(sha1, fs, fs.Length, 0x8000, alignment);
+                return Hash(sha1, fs, alignment);
             }
         }
 
-        private static byte[] Hash(SHA1 digest, FileStream fs, long inputSize, int bufferSize, int alignment)
+        private static byte[] Hash(SHA1 digest, FileStream input, int alignment)
         {
-            long target_size = (alignment == 0) ? inputSize : Utils.Align(inputSize, alignment);
+            long targetSize = Utils.Align(input.Length, alignment);
+            byte[] alignedFileContents = new byte[targetSize];
+            input.Read(alignedFileContents);
 
-            long cur_position = 0;
-            int inBlockBufferRead;
-
-            ByteArrayBuffer overflow = new ByteArrayBuffer(bufferSize);
-            MemoryStream finalbuffer = new MemoryStream();
-
-            do
-            {
-                byte[] blockBuffer = new byte[bufferSize];
-                if (cur_position + bufferSize > inputSize)
-                {
-                    long expectedSize = inputSize - cur_position;
-                    Utils.GetChunkFromStream(fs, blockBuffer, overflow, expectedSize);
-                    inBlockBufferRead = bufferSize;
-                }
-                else
-                {
-                    int expectedSize = bufferSize;
-                    inBlockBufferRead = Utils.GetChunkFromStream(fs, blockBuffer, overflow, expectedSize);
-                }
-                finalbuffer.Write(blockBuffer, 0, inBlockBufferRead);
-
-                cur_position += inBlockBufferRead;
-            } while (cur_position < target_size && (inBlockBufferRead == bufferSize));
-
-            return digest.ComputeHash(finalbuffer.ToArray());
+            return digest.ComputeHash(alignedFileContents);
         }
     }
 }

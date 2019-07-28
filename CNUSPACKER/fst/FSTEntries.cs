@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using CNUSPACKER.contents;
@@ -16,17 +15,6 @@ namespace CNUSPACKER.fst
             entries.Add(root);
         }
 
-        public bool AddEntry(FSTEntry entry)
-        {
-            if (!entry.isDir)
-            {
-                Console.WriteLine("FSTEntries in root need to be directories.");
-                return false;
-            }
-            entries.Add(entry);
-            return true;
-        }
-
         public void Update()
         {
             foreach (FSTEntry entry in entries)
@@ -36,6 +24,21 @@ namespace CNUSPACKER.fst
             UpdateDirRefs();
         }
 
+        private void UpdateDirRefs()
+        {
+            if (entries.Count == 0)
+                return;
+
+            FSTEntry root = entries[0];
+            root.parentOffset = 0;
+            root.nextOffset = FST.curEntryOffset;
+            FSTEntry lastdir = root.UpdateDirRefs();
+            if (lastdir != null)
+            {
+                lastdir.nextOffset = FST.curEntryOffset;
+            }
+        }
+
         public List<FSTEntry> GetFSTEntriesByContent(Content content)
         {
             List<FSTEntry> result = new List<FSTEntry>();
@@ -43,7 +46,7 @@ namespace CNUSPACKER.fst
             {
                 if (!curEntry.notInPackage)
                 {
-                    result.AddRange(curEntry.GetFstEntriesByContent(content));
+                    result.AddRange(curEntry.GetFSTEntriesByContent(content));
                 }
             }
 
@@ -80,21 +83,6 @@ namespace CNUSPACKER.fst
         public FSTEntry GetRootEntry()
         {
             return (entries.Count == 0) ? null : entries[0];
-        }
-
-        public void UpdateDirRefs()
-        {
-            if (entries.Count == 0)
-                return;
-
-            FSTEntry root = entries[0];
-            root.parentOffset = 0;
-            root.nextOffset = FST.curEntryOffset;
-            FSTEntry lastdir = root.UpdateDirRefs();
-            if (lastdir != null)
-            {
-                lastdir.nextOffset = FST.curEntryOffset;
-            }
         }
     }
 }

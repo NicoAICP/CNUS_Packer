@@ -45,7 +45,7 @@ namespace CNUSPACKER.packaging
         private static Content SetNewContentRecursiveRule(string path, string pattern, FSTEntry cur_entry, Contents targetContents, ContentRule rule)
         {
             path += cur_entry.filename + "/";
-            Regex p =  new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            Regex p = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             Content result = null;
 
             if (cur_entry.children.Count == 0)

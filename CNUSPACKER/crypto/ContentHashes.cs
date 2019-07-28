@@ -13,7 +13,7 @@ namespace CNUSPACKER.crypto
         private readonly Dictionary<int, byte[]> h2Hashes = new Dictionary<int, byte[]>();
         private readonly Dictionary<int, byte[]> h3Hashes = new Dictionary<int, byte[]>();
 
-        public byte[] TMDHash { get; }
+        public readonly byte[] TMDHash;
 
         private int blockCount;
 
@@ -38,23 +38,19 @@ namespace CNUSPACKER.crypto
             int hash_level_pow = 1 << (4 * hash_level);
 
             int hashescount = (blockCount / hash_level_pow) + 1;
-            int new_blocks = 0;
-
-            for (int j = 0; j < hashescount; j++)
+            for (int new_block = 0; new_block < hashescount; new_block++)
             {
                 byte[] cur_hashes = new byte[16 * 20];
-                for (int i = j * 16; i < (j * 16) + 16; i++)
+                for (int i = new_block * 16; i < (new_block * 16) + 16; i++)
                 {
                     if (in_hashes.ContainsKey(i))
                         Array.Copy(in_hashes[i], 0, cur_hashes, (i % 16) * 20, 20);
                 }
-                out_hashes.Add(new_blocks, HashUtil.HashSHA1(cur_hashes));
-                new_blocks++;
+                out_hashes.Add(new_block, HashUtil.HashSHA1(cur_hashes));
 
-                int progress = 100 * new_blocks / hashescount;
-                if (new_blocks % 100 == 0)
+                if (new_block % 100 == 0)
                 {
-                    Console.Write("\rcalculating h" + hash_level + ": " + progress + "%");
+                    Console.Write("\rcalculating h" + hash_level + ": " + 100 * new_block / hashescount + "%");
                 }
             }
             Console.WriteLine("\rcalculating h" + hash_level + ": done");
@@ -62,29 +58,25 @@ namespace CNUSPACKER.crypto
 
         private void CalculateH0Hashes(FileInfo file)
         {
-            using (FileStream fs = file.Open(FileMode.Open))
+            using (FileStream input = file.Open(FileMode.Open))
             {
-                const int buffer_size = 0xFC00;
-                byte[] buffer = new byte[buffer_size];
-                ByteArrayBuffer overflowbuffer = new ByteArrayBuffer(buffer_size);
-                int read;
-                int block = 0;
-                int total_blocks = (int)(file.Length / buffer_size) + 1;
-                do
+                const int bufferSize = 0xFC00;
+
+                byte[] buffer = new byte[bufferSize];
+                int total_blocks = (int)(file.Length / bufferSize) + 1;
+                for (int block = 0; block < total_blocks; block++)
                 {
-                    read = Utils.GetChunkFromStream(fs, buffer, overflowbuffer, buffer_size);
+                    input.Read(buffer, 0, bufferSize);
 
                     h0Hashes.Add(block, HashUtil.HashSHA1(buffer));
 
-                    block++;
-                    int progress = 100 * block / total_blocks;
                     if (block % 100 == 0)
                     {
-                        Console.Write("\rcalculating h0: " + progress + "%");
+                        Console.Write("\rcalculating h0: " + 100 * block / total_blocks + "%");
                     }
-                } while (read == buffer_size);
+                }
                 Console.WriteLine("\rcalculating h0: done");
-                blockCount = block;
+                blockCount = total_blocks;
             }
         }
 

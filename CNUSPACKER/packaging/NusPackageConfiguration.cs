@@ -6,11 +6,11 @@ namespace CNUSPACKER.packaging
 {
     public class NusPackageConfiguration
     {
-        public string dir { get; }
-        public AppXMLInfo appInfo { get; }
-        public Key encryptionKey { get; }
-        public Key encryptKeyWith { get; }
-        public List<ContentRule> rules { get; }
+        public readonly string dir;
+        public readonly AppXMLInfo appInfo;
+        public readonly Key encryptionKey;
+        public readonly Key encryptKeyWith;
+        public readonly List<ContentRule> rules;
 
         public NusPackageConfiguration(string dir, AppXMLInfo appInfo, Key encryptionKey, Key encryptKeyWith, List<ContentRule> rules)
         {

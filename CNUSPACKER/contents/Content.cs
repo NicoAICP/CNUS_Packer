@@ -46,7 +46,7 @@ namespace CNUSPACKER.contents
             this.type |= type;
         }
 
-        public void removeType(short type)
+        public void RemoveType(short type)
         {
             this.type &= (short)~type;
         }
@@ -90,8 +90,7 @@ namespace CNUSPACKER.contents
                 content_offset += fst_content_size;
             }
 
-            // we need to write with big endian, so we'll Array.Reverse a lot
-            byte[] temp;
+            byte[] temp; // We need to write in big endian, so we're gonna Array.Reverse a lot
 
             temp = BitConverter.GetBytes((int)old_content_offset);
             Array.Reverse(temp);
@@ -170,7 +169,7 @@ namespace CNUSPACKER.contents
             Encryption encryption = nusPackage.GetEncryption();
             Console.WriteLine("Packing files into one file:");
             //At first we need to create the decrypted file.
-            FileInfo decryptedFile = packDecrypted();
+            FileInfo decryptedFile = PackDecrypted();
 
             Console.WriteLine();
             Console.WriteLine("Generate hashes:");
@@ -209,7 +208,7 @@ namespace CNUSPACKER.contents
             return new FileInfo(Path.GetFullPath(outputFilePath));
         }
 
-        private FileInfo packDecrypted()
+        private FileInfo PackDecrypted()
         {
             string tmp_path = Path.Combine(Settings.tmpDir, ID.ToString("X8") + ".dec");
             using (FileStream fos = new FileStream(tmp_path, FileMode.Create))
@@ -231,7 +230,7 @@ namespace CNUSPACKER.contents
                             cur_offset += Utils.Align(entry.GetFileSize(), ALIGNMENT_IN_CONTENT_FILE);
                             string output = "[" + cnt_file + "/" + totalCount + "] Writing at " + old_offset + " | FileSize: " + entry.GetFileSize() + " | " + entry.filename;
 
-                            Utils.copyFileInto(entry.filepath, fos, output);
+                            Utils.CopyFileInto(entry.filepath, fos, output);
 
                             int padding = (int)(cur_offset - (old_offset + entry.GetFileSize()));
                             fos.Write(new byte[padding]);

@@ -45,7 +45,7 @@ namespace CNUSPACKER.packaging
             return (int)strings.Position;
         }
 
-        public static void addString(string filename)
+        public static void AddString(string filename)
         {
             strings.Write(Encoding.ASCII.GetBytes(filename));
             strings.WriteByte(0x00);

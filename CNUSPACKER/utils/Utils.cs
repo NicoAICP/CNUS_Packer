@@ -54,39 +54,7 @@ namespace CNUSPACKER.utils
             return new string(c);
         }
 
-        public static int GetChunkFromStream(Stream s, byte[] output, ByteArrayBuffer overflowbuffer, long expectedSize)
-        {
-            int inBlockBuffer = 0;
-            do
-            {
-                int bytesRead = s.Read(overflowbuffer.buffer, overflowbuffer.getLengthOfDataInBuffer(), overflowbuffer.getSpaceLeft());
-                if (bytesRead <= 0) break;
-
-                overflowbuffer.addLengthOfDataInBuffer(bytesRead);
-
-                if (inBlockBuffer + overflowbuffer.getLengthOfDataInBuffer() > expectedSize)
-                {
-                    long tooMuch = inBlockBuffer + bytesRead - expectedSize;
-                    long toRead = expectedSize - inBlockBuffer;
-
-                    Array.Copy(overflowbuffer.buffer, 0, output, inBlockBuffer, (int)toRead);
-                    inBlockBuffer += (int)toRead;
-
-                    Array.Copy(overflowbuffer.buffer, (int)toRead, overflowbuffer.buffer, 0, (int)tooMuch);
-                    overflowbuffer.setLengthOfDataInBuffer((int)tooMuch);
-                }
-                else
-                {
-                    Array.Copy(overflowbuffer.buffer, 0, output, inBlockBuffer, overflowbuffer.getLengthOfDataInBuffer());
-                    inBlockBuffer += overflowbuffer.getLengthOfDataInBuffer();
-                    overflowbuffer.resetLengthOfDataInBuffer();
-                }
-            } while (inBlockBuffer != expectedSize);
-
-            return inBlockBuffer;
-        }
-
-        public static byte[] copyOfRange(byte[] src, int start, int end)
+        public static byte[] CopyOfRange(byte[] src, int start, int end)
         {
             int len = end - start;
             byte[] dest = new byte[len];
@@ -95,7 +63,7 @@ namespace CNUSPACKER.utils
             return dest;
         }
 
-        public static void copyFileInto(string path, FileStream output, string s = null)
+        public static void CopyFileInto(string path, FileStream output, string s = null)
         {
             if (s != null)
                 Console.Write(s);
