@@ -103,24 +103,24 @@ namespace CNUSPACKER.packaging
             return contentsDictionary.ContainsKey(contents) ? contentsDictionary[contents] : null;
         }
 
-        public static NUSpackage GetPackageByFSTEntires(FSTEntries fstEntries)
+        public static NUSpackage GetPackageByFSTEntries(FSTEntries fstEntries)
         {
             return FSTEntriesDictionary.ContainsKey(fstEntries) ? FSTEntriesDictionary[fstEntries] : null;
         }
 
-        private static void ReadFiles(IEnumerable<string> file_paths, IEnumerable<string> dir_paths, FSTEntry parent, bool notInNUSPackage = false)
+        private static void ReadFiles(IEnumerable<string> filePaths, IEnumerable<string> dirPaths, FSTEntry parent)
         {
-            foreach (string file in file_paths) // files first
+            foreach (string file in filePaths) // files first
             {
-                FSTEntry newFile = new FSTEntry(file, notInNUSPackage);
+                FSTEntry newFile = new FSTEntry(file);
                 parent.AddChildren(newFile);
             }
 
-            foreach (string dir in dir_paths) // directories afterwards
+            foreach (string dir in dirPaths) // directories afterwards
             {
-                FSTEntry newDir = new FSTEntry(dir, notInNUSPackage);
+                FSTEntry newDir = new FSTEntry(dir);
                 parent.AddChildren(newDir);
-                ReadFiles(Directory.EnumerateFiles(dir), Directory.EnumerateDirectories(dir), newDir, notInNUSPackage);
+                ReadFiles(Directory.EnumerateFiles(dir), Directory.EnumerateDirectories(dir), newDir);
             }
         }
     }

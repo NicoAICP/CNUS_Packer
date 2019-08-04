@@ -5,13 +5,13 @@ using System.Linq;
 using System.Text;
 using CNUSPACKER.contents;
 using CNUSPACKER.packaging;
+using CNUSPACKER.utils;
 
 namespace CNUSPACKER.fst
 {
     public enum Types
     {
         DIR = 0x01,
-        notInNUS = 0x80,
         WiiVC = 0x02
     }
 
@@ -19,29 +19,34 @@ namespace CNUSPACKER.fst
     {
         public readonly string filepath;
         public readonly string filename = "";
-        private FSTEntry parent;
         public readonly List<FSTEntry> children = new List<FSTEntry>();
+        private FSTEntry parent;
         private int nameOffset;
         private int entryOffset;
 
         private short flags;
 
+        private readonly bool isRoot;
+        private int rootEntryCount;
+
         public readonly bool isDir;
+        public bool isFile => !isDir;
         public int parentOffset { get; set; }
         public int nextOffset { get; set; }
 
-        private readonly long fileSize;
+        public readonly long fileSize;
         public long fileOffset { get; private set; }
-
-        private readonly bool isRoot;
-
-        private int rootEntryCount;
 
         private Content content;
 
-        public readonly bool notInPackage;
+        public FSTEntry()
+        {
+            filepath = null;
+            isRoot = true;
+            isDir = true;
+        }
 
-        public FSTEntry(string filepath, bool notInPackage = false)
+        public FSTEntry(string filepath)
         {
             this.filepath = Path.GetFullPath(filepath);
             if (Directory.Exists(filepath))
@@ -53,18 +58,6 @@ namespace CNUSPACKER.fst
                 fileSize = new FileInfo(filepath).Length;
             }
             filename = Path.GetFileName(filepath);
-
-            this.notInPackage = notInPackage;
-        }
-
-        public FSTEntry(bool root)
-        {
-            filepath = null;
-            if (root)
-            {
-                isRoot = true;
-                isDir = true;
-            }
         }
 
         public void AddChildren(FSTEntry fstEntry)
@@ -79,80 +72,47 @@ namespace CNUSPACKER.fst
             this.content = content;
         }
 
-        public long GetFileSize()
-        {
-            return !IsFile() ? 0 : fileSize;
-        }
-
-        public bool IsFile()
-        {
-            return !(isDir || notInPackage);
-        }
-
         private byte GetTypeAsByte()
         {
             byte type = 0;
             if (isDir)
                 type |= (byte)Types.DIR;
-            if (notInPackage)
-                type |= (byte)Types.notInNUS;
             if (filename.EndsWith("nfs"))
                 type |= (byte)Types.WiiVC;
+
             return type;
         }
 
         public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(GetDataSize());
-            byte[] temp; // we need to write in big endian, so we're gonna Array.Reverse a lot
+            BigEndianMemoryStream buffer = new BigEndianMemoryStream(GetDataSize());
             if (isRoot)
             {
                 buffer.WriteByte(1);
                 buffer.Seek(7, SeekOrigin.Current);
-                temp = BitConverter.GetBytes(rootEntryCount);
-                Array.Reverse(temp);
-                buffer.Write(temp);
+                buffer.WriteBigEndian(rootEntryCount);
                 buffer.Seek(4, SeekOrigin.Current);
             }
             else
             {
                 buffer.WriteByte(GetTypeAsByte());
-                buffer.WriteByte((byte)((nameOffset >> 16) & 0xFF)); // We need to write a 24bit int (big endian)
-                buffer.WriteByte((byte)((nameOffset >> 8) & 0xFF));
-                buffer.WriteByte((byte)(nameOffset & 0xFF));
+                buffer.WriteByte((byte)(nameOffset >> 16)); // We need to write a 24bit int (big endian)
+                buffer.WriteByte((byte)(nameOffset >> 8));
+                buffer.WriteByte((byte)nameOffset);
 
                 if (isDir)
                 {
-                    temp = BitConverter.GetBytes(parentOffset);
-                    Array.Reverse(temp);
-                    buffer.Write(temp);
-                    temp = BitConverter.GetBytes(nextOffset);
-                    Array.Reverse(temp);
-                    buffer.Write(temp);
+                    buffer.WriteBigEndian(parentOffset);
+                    buffer.WriteBigEndian(nextOffset);
                 }
-                else if (IsFile())
+                else
                 {
-                    temp = BitConverter.GetBytes((int)(fileOffset >> 5));
-                    Array.Reverse(temp);
-                    buffer.Write(temp);
-                    temp = BitConverter.GetBytes((int)fileSize);
-                    Array.Reverse(temp);
-                    buffer.Write(temp);
+                    buffer.WriteBigEndian((int)(fileOffset >> 5));
+                    buffer.WriteBigEndian((int)fileSize);
                 }
-                else if (notInPackage)
-                {
-                    Console.WriteLine("WTF IS HAPPENING");
-                    buffer.Seek(4, SeekOrigin.Current);
-                    temp = BitConverter.GetBytes((int)fileSize);
-                    Array.Reverse(temp);
-                    buffer.Write(temp);
-                } else Console.WriteLine("WTF IS HAPPENING 2");
-                temp = BitConverter.GetBytes(flags);
-                Array.Reverse(temp);
-                buffer.Write(temp);
-                temp = BitConverter.GetBytes((short)content.ID);
-                Array.Reverse(temp);
-                buffer.Write(temp);
+
+                buffer.WriteBigEndian(flags);
+                buffer.WriteBigEndian((short)content.ID);
             }
 
             foreach (FSTEntry entry in children)
@@ -165,19 +125,15 @@ namespace CNUSPACKER.fst
 
         private int GetDataSize()
         {
-            int size = 0x10;
-            foreach (FSTEntry entry in children)
-            {
-                size += entry.GetDataSize();
-            }
-            return size;
+            return 0x10 + children.Sum(child => child.GetDataSize());
         }
 
         private void SetNameOffset(int nameOffset)
         {
             if (nameOffset > 0xFFFFFF)
             {
-                Console.WriteLine("Warning: filename offset is too big. Maximum is " + 0xFFFFFF + ", tried to set to " + nameOffset);
+                Console.WriteLine(
+                    $"Warning: filename offset is too big. Maximum is {0xFFFFFF}, tried to set to {nameOffset}");
             }
             this.nameOffset = nameOffset;
         }
@@ -190,14 +146,10 @@ namespace CNUSPACKER.fst
             FST.curEntryOffset++;
 
             if (isDir && !isRoot)
-            {
                 parentOffset = parent.entryOffset;
-            }
 
-            if (content != null && IsFile())
-            {
+            if (content != null && !isDir)
                 fileOffset = content.GetOffsetForFileAndIncrease(this);
-            }
 
             foreach (FSTEntry entry in children)
             {
@@ -207,19 +159,19 @@ namespace CNUSPACKER.fst
 
         public FSTEntry UpdateDirRefs()
         {
-            if (!(isDir || isRoot)) return null;
+            if (!isDir)
+                return null;
             if (parent != null)
-            {
                 parentOffset = parent.entryOffset;
-            }
 
             FSTEntry result = null;
 
-            for (int i = 0; i < GetDirChildren().Count; i++)
+            List<FSTEntry> dirChildren = GetDirChildren().ToList();
+            for (int i = 0; i < dirChildren.Count; i++)
             {
-                FSTEntry cur_dir = GetDirChildren()[i];
-                if (GetDirChildren().Count > i + 1)
-                    cur_dir.nextOffset = GetDirChildren()[i + 1].entryOffset;
+                FSTEntry cur_dir = dirChildren[i];
+                if (dirChildren.Count > i + 1)
+                    cur_dir.nextOffset = dirChildren[i + 1].entryOffset;
 
                 FSTEntry cur_result = cur_dir.UpdateDirRefs();
 
@@ -233,7 +185,7 @@ namespace CNUSPACKER.fst
                     cur_result.nextOffset = cur_foo.nextOffset;
                 }
 
-                if (GetDirChildren().Count > i)
+                if (dirChildren.Count > i)
                     result = cur_dir;
             }
 
@@ -259,34 +211,29 @@ namespace CNUSPACKER.fst
         public void PrintRecursive(int space, int level = 0)
         {
             Console.Write(new string(' ', space * level));
-            Console.Write(filename);
-            if (notInPackage)
-            {
-                Console.Write(" (not in package) ");
-            }
-            Console.WriteLine();
-            foreach (FSTEntry child in GetDirChildren(true))
+            Console.WriteLine(filename);
+            foreach (FSTEntry child in GetDirChildren())
             {
                 child.PrintRecursive(space, level + 1);
             }
-            foreach (FSTEntry child in GetFileChildren(true))
+            foreach (FSTEntry child in GetFileChildren())
             {
                 child.PrintRecursive(space, level + 1);
             }
         }
 
-        public List<FSTEntry> GetFSTEntriesByContent(Content content)
+        public IEnumerable<FSTEntry> GetFSTEntriesByContent(Content content)
         {
             List<FSTEntry> entries = new List<FSTEntry>();
-            if(this.content == null)
+            if (this.content == null)
             {
                 if (isDir)
                 {
-                    Console.Error.WriteLine("The folder \"" + filename + "\" is empty. Please add a dummy file to it.");
+                    Console.Error.WriteLine($"The folder \"{filename}\" is empty. Please add a dummy file to it.");
                 }
                 else
                 {
-                    Console.Error.WriteLine("The file \"" + filename + "\" is not assigned to any content (.app).");
+                    Console.Error.WriteLine($"The file \"{filename}\" is not assigned to any content (.app).");
                     Console.Error.WriteLine("Please delete it or write a corresponding content rule.");
                 }
                 Environment.Exit(0);
@@ -296,21 +243,13 @@ namespace CNUSPACKER.fst
                 entries.Add(this);
             }
 
-            foreach (FSTEntry child in children)
-            {
-                entries.AddRange(child.GetFSTEntriesByContent(content));
-            }
+            entries.AddRange(children.SelectMany(child => child.GetFSTEntriesByContent(content)));
             return entries;
         }
 
         public int GetEntryCount()
         {
-            int count = 1;
-            foreach (FSTEntry child in children)
-            {
-                count += child.GetEntryCount();
-            }
-            return count;
+            return 1 + children.Sum(child => child.GetEntryCount());
         }
 
         public void SetEntryCount(int fstEntryCount)
@@ -318,30 +257,14 @@ namespace CNUSPACKER.fst
             rootEntryCount = fstEntryCount;
         }
 
-        public List<FSTEntry> GetDirChildren(bool all = false)
+        private IEnumerable<FSTEntry> GetDirChildren()
         {
-            List<FSTEntry> result = new List<FSTEntry>();
-            foreach(FSTEntry child in children)
-            {
-                if(child.isDir && (all || !child.notInPackage))
-                {
-                    result.Add(child);
-                }
-            }
-            return result;
+            return children.Where(child => child.isDir);
         }
 
-        public List<FSTEntry> GetFileChildren(bool all = false)
+        private IEnumerable<FSTEntry> GetFileChildren()
         {
-            List<FSTEntry> result = new List<FSTEntry>();
-            foreach(FSTEntry child in children)
-            {
-                if(child.IsFile() || (all && !child.isDir))
-                {
-                    result.Add(child);
-                }
-            }
-            return result;
+            return children.Where(child => child.isFile);
         }
     }
 }

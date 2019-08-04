@@ -23,7 +23,7 @@ namespace CNUSPACKER.utils
                 appType = (uint) GetValueOfElementAsLongHex("app/app_type"),
                 groupID = (short) GetValueOfElementAsLongHex("app/group_id"),
                 osMask = GetValueOfElementAsByteArray("app/os_mask"),
-                common_id = GetValueOfElementAsLongHex("app/common_id")
+                commonID = GetValueOfElementAsLongHex("app/common_id")
             };
 
             return appxmlinfo;

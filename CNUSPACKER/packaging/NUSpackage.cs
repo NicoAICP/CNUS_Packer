@@ -22,37 +22,36 @@ namespace CNUSPACKER.packaging
             fstContent.SHA1 = HashUtil.HashSHA1(fst.GetAsData());
             fstContent.encryptedFileSize = fst.GetAsData().Length;
 
-            ContentInfo contentInfo = tmd.contentInfos.GetContentInfo(0);
-            contentInfo.SHA2Hash = HashUtil.HashSHA2(fst.contents.GetAsData());
+            tmd.contentInfo.SHA2Hash = HashUtil.HashSHA2(fst.contents.GetAsData());
             tmd.UpdateContentInfoHash();
 
             FileStream fos;
-            using (fos = new FileStream(Path.Combine(outputDir, "title.tmd"), FileMode.OpenOrCreate))
+            using (fos = new FileStream(Path.Combine(outputDir, "title.tmd"), FileMode.Create))
             {
                 fos.Write(tmd.GetAsData());
             }
-            Console.WriteLine("TMD saved to    " + Path.Combine(outputDir, "title.tmd"));
+            Console.WriteLine($"TMD saved to    {Path.Combine(outputDir, "title.tmd")}");
 
-            using (fos = new FileStream(Path.Combine(outputDir, "title.cert"), FileMode.OpenOrCreate))
+            using (fos = new FileStream(Path.Combine(outputDir, "title.cert"), FileMode.Create))
             {
                 fos.Write(Cert.GetCertAsData());
             }
-            Console.WriteLine("Cert saved to   " + Path.Combine(outputDir, "title.cert"));
+            Console.WriteLine($"Cert saved to   {Path.Combine(outputDir, "title.cert")}");
 
-            using (fos = new FileStream(Path.Combine(outputDir, "title.tik"), FileMode.OpenOrCreate))
+            using (fos = new FileStream(Path.Combine(outputDir, "title.tik"), FileMode.Create))
             {
                 fos.Write(ticket.GetAsData());
             }
-            Console.WriteLine("Ticket saved to " + Path.Combine(outputDir, "title.tik"));
+            Console.WriteLine($"Ticket saved to {Path.Combine(outputDir, "title.tik")}");
             Console.WriteLine();
         }
 
         public void PrintTicketInfos()
         {
-            Console.WriteLine("Encrypted with this key           : " + ticket.decryptedKey);
-            Console.WriteLine("Key encrypted with this key       : " + ticket.encryptWith);
+            Console.WriteLine($"Encrypted with this key           : {ticket.decryptedKey}");
+            Console.WriteLine($"Key encrypted with this key       : {ticket.encryptWith}");
             Console.WriteLine();
-            Console.WriteLine("Encrypted key                     : " + ticket.GetEncryptedKey());
+            Console.WriteLine($"Encrypted key                     : {ticket.GetEncryptedKey()}");
         }
 
         public Encryption GetEncryption()

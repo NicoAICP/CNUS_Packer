@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Text;
 using CNUSPACKER.contents;
@@ -53,16 +52,11 @@ namespace CNUSPACKER.packaging
 
         public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(GetDataSize());
-            byte[] temp;
+            BigEndianMemoryStream buffer = new BigEndianMemoryStream(GetDataSize());
 
             buffer.Write(magicbytes);
-            temp = BitConverter.GetBytes(unknown);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-            temp = BitConverter.GetBytes(contentCount);
-            Array.Reverse(temp);
-            buffer.Write(temp);
+            buffer.WriteBigEndian(unknown);
+            buffer.WriteBigEndian(contentCount);
             buffer.Seek(20, SeekOrigin.Current);
             buffer.Write(contents.GetFSTContentHeaderAsData());
             buffer.Write(fileEntries.GetAsData());

@@ -20,8 +20,7 @@ namespace CNUSPACKER.packaging
 
         public override string ToString()
         {
-            return "ContentDetails [isContent=" + isContent + ", isEncrypted=" + isEncrypted + ", isHashed=" + isHashed
-                + ", groupID=" + groupID + ", parentTitleID=" + parentTitleID + ", entriesFlag=" + entriesFlag + "]";
+            return $"ContentDetails [isContent={isContent}, isEncrypted={isEncrypted}, isHashed={isHashed}, groupID={groupID}, parentTitleID={parentTitleID}, entriesFlag={entriesFlag}]";
         }
     }
 }

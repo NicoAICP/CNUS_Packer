@@ -50,34 +50,33 @@ namespace CNUSPACKER.crypto
 
                 if (new_block % 100 == 0)
                 {
-                    Console.Write("\rcalculating h" + hash_level + ": " + 100 * new_block / hashescount + "%");
+                    Console.Write($"\rcalculating h{hash_level}: {100 * new_block / hashescount}%");
                 }
             }
-            Console.WriteLine("\rcalculating h" + hash_level + ": done");
+            Console.WriteLine($"\rcalculating h{hash_level}: done");
         }
 
         private void CalculateH0Hashes(FileInfo file)
         {
-            using (FileStream input = file.Open(FileMode.Open))
+            using FileStream input = file.Open(FileMode.Open);
+
+            const int bufferSize = 0xFC00;
+
+            byte[] buffer = new byte[bufferSize];
+            int total_blocks = (int)(file.Length / bufferSize) + 1;
+            for (int block = 0; block < total_blocks; block++)
             {
-                const int bufferSize = 0xFC00;
+                input.Read(buffer, 0, bufferSize);
 
-                byte[] buffer = new byte[bufferSize];
-                int total_blocks = (int)(file.Length / bufferSize) + 1;
-                for (int block = 0; block < total_blocks; block++)
+                h0Hashes.Add(block, HashUtil.HashSHA1(buffer));
+
+                if (block % 100 == 0)
                 {
-                    input.Read(buffer, 0, bufferSize);
-
-                    h0Hashes.Add(block, HashUtil.HashSHA1(buffer));
-
-                    if (block % 100 == 0)
-                    {
-                        Console.Write("\rcalculating h0: " + 100 * block / total_blocks + "%");
-                    }
+                    Console.Write($"\rcalculating h0: {100 * block / total_blocks}%");
                 }
-                Console.WriteLine("\rcalculating h0: done");
-                blockCount = total_blocks;
             }
+            Console.WriteLine("\rcalculating h0: done");
+            blockCount = total_blocks;
         }
 
         public byte[] GetHashForBlock(int block)
@@ -144,14 +143,13 @@ namespace CNUSPACKER.crypto
             return buffer.GetBuffer();
         }
 
-        public void SaveH3ToFile(string h3_path)
+        public void SaveH3ToFile(string h3Path)
         {
             if (h3Hashes.Count > 0)
             {
-                using (FileStream fos = new FileStream(h3_path, FileMode.Create))
-                {
-                    fos.Write(GetH3Hashes());
-                }
+                using FileStream fos = new FileStream(h3Path, FileMode.Create);
+
+                fos.Write(GetH3Hashes());
             }
         }
     }

@@ -9,14 +9,13 @@ namespace CNUSPACKER.utils
         public uint sdkVersion { get; set; }
         public uint appType { get; set; }
         public short groupID { get; set; }
-        public byte[] osMask = new byte[32];
-        public long common_id { get; set; }
+        public byte[] osMask { get; set; } = new byte[32];
+        public long commonID { get; set; }
 
         public override string ToString()
         {
-            return "AppXMLInfo [version=" + version + ", OSVersion=" + osVersion + ", titleID=" + titleID
-                + ", titleVersion=" + titleVersion + ", SDKVersion=" + sdkVersion + ", appType=" + appType
-                + ", groupID=" + groupID + ", OSMask=" + Utils.ByteArrayToHexString(osMask) + ", common_id=" + common_id + "]";
+            return $"AppXMLInfo [version={version}, OSVersion={osVersion}, titleID={titleID}, titleVersion={titleVersion}, " +
+                   $"SDKVersion={sdkVersion}, appType={appType}, groupID={groupID}, OSMask={Utils.ByteArrayToHexString(osMask)}, common_id={commonID}]";
         }
     }
 }

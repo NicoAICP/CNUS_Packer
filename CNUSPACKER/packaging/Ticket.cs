@@ -21,7 +21,7 @@ namespace CNUSPACKER.packaging
         public byte[] GetAsData()
         {
             Random rdm = new Random();
-            MemoryStream buffer = new MemoryStream(0x350);
+            BigEndianMemoryStream buffer = new BigEndianMemoryStream(0x350);
             buffer.Write(Utils.HexStringToByteArray("00010004"));
             byte[] randomData = new byte[0x100];
             rdm.NextBytes(randomData);
@@ -36,9 +36,7 @@ namespace CNUSPACKER.packaging
             rdm.NextBytes(randomData);
             buffer.Write(randomData);
             buffer.Seek(0x04, SeekOrigin.Current);
-            byte[] temp = BitConverter.GetBytes(titleID);
-            Array.Reverse(temp);
-            buffer.Write(temp);
+            buffer.WriteBigEndian(titleID);
             buffer.Write(Utils.HexStringToByteArray("00000011000000000000000000000005"));
             buffer.Seek(0xB0, SeekOrigin.Current);
             buffer.Write(Utils.HexStringToByteArray("00010014000000AC000000140001001400000000000000280000000100000084000000840003000000000000FFFFFF01"));
@@ -49,11 +47,9 @@ namespace CNUSPACKER.packaging
 
         public Key GetEncryptedKey()
         {
-            MemoryStream iv_buffer = new MemoryStream(0x10);
-            byte[] temp = BitConverter.GetBytes(titleID);
-            Array.Reverse(temp);
-            iv_buffer.Write(temp);
-            Encryption encrypt = new Encryption(encryptWith, new IV(iv_buffer.GetBuffer()));
+            BigEndianMemoryStream ivStream = new BigEndianMemoryStream(0x10);
+            ivStream.WriteBigEndian(titleID);
+            Encryption encrypt = new Encryption(encryptWith, new IV(ivStream.GetBuffer()));
 
             return new Key(encrypt.Encrypt(decryptedKey.key));
         }

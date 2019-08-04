@@ -69,24 +69,19 @@ namespace CNUSPACKER.utils
                 Console.Write(s);
 
             long written = 0;
-            using (FileStream fs = File.Open(path, FileMode.Open))
+            using FileStream fs = File.Open(path, FileMode.Open);
+
+            long filesize = fs.Length;
+            byte[] buffer = new byte[0x10000];
+            do
             {
-                long filesize = fs.Length;
-                byte[] buffer = new byte[0x10000];
-                do
-                {
-                    int read = fs.Read(buffer);
-                    if (read <= 0) break;
-                    output.Write(buffer, 0, read);
-                    written += read;
-                    if (s != null)
-                    {
-                        int progress = (int)(100 * written / filesize);
-                        Console.Write("\r" + s + " : " + progress + "%");
-                    }
-                } while (written < filesize);
-                Console.WriteLine();
-            }
+                int read = fs.Read(buffer);
+                output.Write(buffer, 0, read);
+                written += read;
+                if (s != null)
+                    Console.Write($"\r{s} : {100 * written / filesize}%");
+            } while (written < filesize);
+            Console.WriteLine();
         }
     }
 }

@@ -12,33 +12,24 @@ namespace CNUSPACKER.contents
     {
         public const int staticFSTContentHeaderDataSize = 32;
         public const int staticDataSize = 48;
-
-        private const short TYPE_CONTENT = 8192;
-        private const short TYPE_ENCRYPTED = 1;
+        public const int CONTENT_FILE_PADDING = 32768;
         public const short TYPE_HASHED = 2;
 
-        public int ID { get; set; }
-
-        public short index { get; set; }
+        private const int ALIGNMENT_IN_CONTENT_FILE = 32;
+        private const short TYPE_CONTENT = 8192;
+        private const short TYPE_ENCRYPTED = 1;
 
         private short type = TYPE_CONTENT | TYPE_ENCRYPTED;
-
-        public long encryptedFileSize { get; set; }
-
-        public byte[] SHA1 { get; set; } = new byte[20];
-
         private long curFileOffset;
-        private const int ALIGNMENT_IN_CONTENT_FILE = 32;
-        public const int CONTENT_FILE_PADDING = 32768;
-
         private List<FSTEntry> entries = new List<FSTEntry>();
 
+        public int ID { get; set; }
+        public short index { get; set; }
+        public long encryptedFileSize { get; set; }
+        public byte[] SHA1 { get; set; } = new byte[20];
         public int groupID { get; set; }
-
         public long parentTitleID { get; set; }
-
         public short entriesFlags { get; set; }
-
         public bool isFSTContent { get; set; }
 
         public void AddType(short type)
@@ -58,31 +49,31 @@ namespace CNUSPACKER.contents
 
         public KeyValuePair<long, byte[]> GetFSTContentHeaderAsData(long old_content_offset)
         {
-            MemoryStream buffer = new MemoryStream(staticFSTContentHeaderDataSize);
+            BigEndianMemoryStream buffer = new BigEndianMemoryStream(staticFSTContentHeaderDataSize);
 
-            byte unkwn;
+            byte unknown;
             long content_offset = old_content_offset;
             long fst_content_size = encryptedFileSize / CONTENT_FILE_PADDING;
             long fst_content_size_written = fst_content_size;
 
             if (IsHashed())
             {
-                unkwn = 2;
+                unknown = 2;
                 fst_content_size_written -= ((fst_content_size / 64) + 1) * 2;
-                if (fst_content_size_written < 0) fst_content_size_written = 0;
+                if (fst_content_size_written < 0)
+                    fst_content_size_written = 0;
             }
             else
             {
-                unkwn = 1;
+                unknown = 1;
             }
 
             if (isFSTContent)
             {
-                unkwn = 0;
-                if(fst_content_size == 1)
-                {
+                unknown = 0;
+                if (fst_content_size == 1)
                     fst_content_size = 0;
-                }
+
                 content_offset += fst_content_size + 2;
             }
             else
@@ -90,25 +81,11 @@ namespace CNUSPACKER.contents
                 content_offset += fst_content_size;
             }
 
-            byte[] temp; // We need to write in big endian, so we're gonna Array.Reverse a lot
-
-            temp = BitConverter.GetBytes((int)old_content_offset);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-
-            temp = BitConverter.GetBytes((int)fst_content_size_written);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-
-            temp = BitConverter.GetBytes(parentTitleID);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-
-            temp = BitConverter.GetBytes(groupID);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-
-            buffer.WriteByte(unkwn);
+            buffer.WriteBigEndian((int)old_content_offset);
+            buffer.WriteBigEndian((int)fst_content_size_written);
+            buffer.WriteBigEndian(parentTitleID);
+            buffer.WriteBigEndian(groupID);
+            buffer.WriteByte(unknown);
 
             return new KeyValuePair<long, byte[]>(content_offset, buffer.GetBuffer());
         }
@@ -116,7 +93,8 @@ namespace CNUSPACKER.contents
         public long GetOffsetForFileAndIncrease(FSTEntry fstEntry)
         {
             long old_fileoffset = curFileOffset;
-            curFileOffset = old_fileoffset + Utils.Align(fstEntry.GetFileSize(), ALIGNMENT_IN_CONTENT_FILE);
+            curFileOffset = old_fileoffset + Utils.Align(fstEntry.fileSize, ALIGNMENT_IN_CONTENT_FILE);
+
             return old_fileoffset;
         }
 
@@ -125,36 +103,13 @@ namespace CNUSPACKER.contents
             curFileOffset = 0;
         }
 
-        private List<FSTEntry> GetFSTEntries()
-        {
-            return entries;
-        }
-
-        private int GetFSTEntryNumber()
-        {
-            return entries.Count;
-        }
-
         public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(staticDataSize);
-            byte[] temp; // We need to write in big endian, so we're gonna Array.Reverse a lot
-
-            temp = BitConverter.GetBytes(ID);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-
-            temp = BitConverter.GetBytes(index);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-
-            temp = BitConverter.GetBytes(type);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-
-            temp = BitConverter.GetBytes(encryptedFileSize);
-            Array.Reverse(temp);
-            buffer.Write(temp);
+            BigEndianMemoryStream buffer = new BigEndianMemoryStream(staticDataSize);
+            buffer.WriteBigEndian(ID);
+            buffer.WriteBigEndian(index);
+            buffer.WriteBigEndian(type);
+            buffer.WriteBigEndian(encryptedFileSize);
 
             buffer.Write(SHA1);
 
@@ -163,7 +118,7 @@ namespace CNUSPACKER.contents
 
         public void PackContentToFile(string outputDir)
         {
-            Console.WriteLine("Packing Content " + ID.ToString("X8") +"\n");
+            Console.WriteLine($"Packing Content {ID:X8}\n");
 
             NUSpackage nusPackage = NUSPackageFactory.GetPackageByContent(this);
             Encryption encryption = nusPackage.GetEncryption();
@@ -178,24 +133,24 @@ namespace CNUSPACKER.contents
 
             ContentHashes contentHashes = new ContentHashes(decryptedFile, IsHashed());
 
-            string h3_path = Path.Combine(outputDir, ID.ToString("X8") + ".h3");
+            string h3Path = Path.Combine(outputDir, $"{ID:X8}.h3");
 
-            contentHashes.SaveH3ToFile(h3_path);
+            contentHashes.SaveH3ToFile(h3Path);
             SHA1 = contentHashes.TMDHash;
             Console.WriteLine();
-            Console.WriteLine("Encrypt content (" + ID.ToString("X8") + ")");
+            Console.WriteLine($"Encrypt content ({ID:X8})");
             FileInfo encryptedFile = PackEncrypted(outputDir, decryptedFile, contentHashes, encryption);
 
             encryptedFileSize = encryptedFile.Length;
 
             Console.WriteLine();
-            Console.WriteLine("Content " + ID.ToString("X8") + " packed to file \"" + encryptedFile.Name + "\"!");
+            Console.WriteLine($"Content {ID:X8} packed to file \"{encryptedFile.Name}\"!");
             Console.WriteLine("-------------");
         }
 
         private FileInfo PackEncrypted(string outputDir, FileInfo decryptedFile, ContentHashes hashes, Encryption encryption)
         {
-            string outputFilePath = Path.Combine(outputDir, ID.ToString("X8") + ".app");
+            string outputFilePath = Path.Combine(outputDir, $"{ID:X8}.app");
             if((type & TYPE_HASHED) == TYPE_HASHED)
             {
                 encryption.EncryptFileHashed(decryptedFile, this, outputFilePath, hashes);
@@ -210,41 +165,38 @@ namespace CNUSPACKER.contents
 
         private FileInfo PackDecrypted()
         {
-            string tmp_path = Path.Combine(Settings.tmpDir, ID.ToString("X8") + ".dec");
-            using (FileStream fos = new FileStream(tmp_path, FileMode.Create))
+            string tmpPath = Path.Combine(Settings.tmpDir, $"{ID:X8}.dec");
+            using (FileStream fos = new FileStream(tmpPath, FileMode.Create))
             {
-                int totalCount = GetFSTEntryNumber();
+                int totalCount = entries.Count;
                 int cnt_file = 1;
                 long cur_offset = 0;
-                foreach (FSTEntry entry in GetFSTEntries())
+                foreach (FSTEntry entry in entries)
                 {
-                    if (!entry.notInPackage)
+                    if (entry.isFile)
                     {
-                        if (entry.IsFile())
+                        if (cur_offset != entry.fileOffset)
                         {
-                            if (cur_offset != entry.fileOffset)
-                            {
-                                Console.WriteLine("FAILED");
-                            }
-                            long old_offset = cur_offset;
-                            cur_offset += Utils.Align(entry.GetFileSize(), ALIGNMENT_IN_CONTENT_FILE);
-                            string output = "[" + cnt_file + "/" + totalCount + "] Writing at " + old_offset + " | FileSize: " + entry.GetFileSize() + " | " + entry.filename;
-
-                            Utils.CopyFileInto(entry.filepath, fos, output);
-
-                            int padding = (int)(cur_offset - (old_offset + entry.GetFileSize()));
-                            fos.Write(new byte[padding]);
+                            Console.WriteLine("FAILED");
                         }
-                        else
-                        {
-                            Console.WriteLine("[" + cnt_file + "/" + totalCount + "] Wrote folder: \"" + entry.filename + "\"");
-                        }
+                        long old_offset = cur_offset;
+                        cur_offset += Utils.Align(entry.fileSize, ALIGNMENT_IN_CONTENT_FILE);
+                        string output = $"[{cnt_file}/{totalCount}] Writing at {old_offset} | FileSize: {entry.fileSize} | {entry.filename}";
+
+                        Utils.CopyFileInto(entry.filepath, fos, output);
+
+                        int padding = (int)(cur_offset - (old_offset + entry.fileSize));
+                        fos.Write(new byte[padding]);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[{cnt_file}/{totalCount}] Wrote folder: \"{entry.filename}\"");
                     }
                     cnt_file++;
                 }
             }
 
-            return new FileInfo(Path.GetFullPath(tmp_path));
+            return new FileInfo(Path.GetFullPath(tmpPath));
         }
 
         public void Update(List<FSTEntry> entries)

@@ -1,5 +1,4 @@
-using System;
-using System.IO;
+using CNUSPACKER.utils;
 
 namespace CNUSPACKER.contents
 {
@@ -10,15 +9,11 @@ namespace CNUSPACKER.contents
         private readonly short contentCount;
         public byte[] SHA2Hash { get; set; }
 
-        public ContentInfo() : this(0)
-        {
-        }
-
         public ContentInfo(short contentCount): this(0, contentCount)
         {
         }
 
-        public ContentInfo(short indexOffset, short contentCount)
+        private ContentInfo(short indexOffset, short contentCount)
         {
             this.indexOffset = indexOffset;
             this.contentCount = contentCount;
@@ -26,16 +21,9 @@ namespace CNUSPACKER.contents
 
         public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(0x24);
-            byte[] temp;
-
-            temp = BitConverter.GetBytes(indexOffset);
-            Array.Reverse(temp);
-            buffer.Write(temp);
-
-            temp = BitConverter.GetBytes(contentCount);
-            Array.Reverse(temp);
-            buffer.Write(temp);
+            BigEndianMemoryStream buffer = new BigEndianMemoryStream(2304);
+            buffer.WriteBigEndian(indexOffset);
+            buffer.WriteBigEndian(contentCount);
 
             buffer.Write(SHA2Hash);
 

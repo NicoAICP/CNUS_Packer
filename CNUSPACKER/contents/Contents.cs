@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using CNUSPACKER.crypto;
 using CNUSPACKER.fst;
 using CNUSPACKER.packaging;
@@ -45,13 +46,7 @@ namespace CNUSPACKER.contents
 
         public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(GetDataSize());
-            foreach (Content c in contents)
-            {
-                buffer.Write(c.GetAsData());
-            }
-
-            return buffer.GetBuffer();
+            return contents.SelectMany(content => content.GetAsData()).ToArray();
         }
 
         public int GetDataSize()
@@ -65,9 +60,9 @@ namespace CNUSPACKER.contents
             MemoryStream buffer = new MemoryStream(GetFSTContentHeaderDataSize());
             foreach (Content c in contents)
             {
-                KeyValuePair<long, byte[]> result = c.GetFSTContentHeaderAsData(content_offset);
-                content_offset = result.Key;
-                buffer.Write(result.Value);
+                (long key, byte[] value) = c.GetFSTContentHeaderAsData(content_offset);
+                content_offset = key;
+                buffer.Write(value);
             }
 
             return buffer.GetBuffer();
@@ -106,17 +101,17 @@ namespace CNUSPACKER.contents
             NUSpackage nuspackage = NUSPackageFactory.GetPackageByContents(this);
             Encryption encryption = nuspackage.GetEncryption();
 
-            Console.WriteLine("Packing the FST into " + fstContent.ID.ToString("X8") + ".app");
-            string fst_path = Path.Combine(outputDir, fstContent.ID.ToString("X8") + ".app");
-            encryption.EncryptFileWithPadding(nuspackage.fst, fst_path, (short)fstContent.ID, Content.CONTENT_FILE_PADDING);
+            Console.WriteLine($"Packing the FST into {fstContent.ID:X8}.app");
+            string fstPath = Path.Combine(outputDir, $"{fstContent.ID:X8}.app");
+            encryption.EncryptFileWithPadding(nuspackage.fst, fstPath, (short)fstContent.ID, Content.CONTENT_FILE_PADDING);
 
             Console.WriteLine("-------------");
             Console.WriteLine("Packed all contents\n\n");
         }
 
-        public void DeleteContent(Content cur_content)
+        public void DeleteContent(Content curContent)
         {
-            contents.Remove(cur_content);
+            contents.Remove(curContent);
         }
     }
 }

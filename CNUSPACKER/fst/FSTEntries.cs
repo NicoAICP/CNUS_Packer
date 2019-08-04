@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using CNUSPACKER.contents;
 using CNUSPACKER.packaging;
 
@@ -11,7 +11,7 @@ namespace CNUSPACKER.fst
 
         public FSTEntries()
         {
-            FSTEntry root = new FSTEntry(true);
+            FSTEntry root = new FSTEntry();
             entries.Add(root);
         }
 
@@ -41,38 +41,17 @@ namespace CNUSPACKER.fst
 
         public List<FSTEntry> GetFSTEntriesByContent(Content content)
         {
-            List<FSTEntry> result = new List<FSTEntry>();
-            foreach (FSTEntry curEntry in entries)
-            {
-                if (!curEntry.notInPackage)
-                {
-                    result.AddRange(curEntry.GetFSTEntriesByContent(content));
-                }
-            }
-
-            return result;
+            return entries.SelectMany(entry => entry.GetFSTEntriesByContent(content)).ToList();
         }
 
         public int GetFSTEntryCount()
         {
-            int count = 0;
-            foreach (FSTEntry entry in entries)
-            {
-                count += entry.GetEntryCount();
-            }
-
-            return count;
+            return entries.Sum(entry => entry.GetEntryCount());
         }
 
         public byte[] GetAsData()
         {
-            MemoryStream buffer = new MemoryStream(GetDataSize());
-            foreach (FSTEntry entry in entries)
-            {
-                buffer.Write(entry.GetAsData());
-            }
-
-            return buffer.GetBuffer();
+            return entries.SelectMany(entry => entry.GetAsData()).ToArray();
         }
 
         public int GetDataSize()
@@ -82,7 +61,7 @@ namespace CNUSPACKER.fst
 
         public FSTEntry GetRootEntry()
         {
-            return (entries.Count == 0) ? null : entries[0];
+            return entries[0];
         }
     }
 }
