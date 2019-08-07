@@ -17,7 +17,7 @@ namespace CNUSPACKER.crypto
 
         private int blockCount;
 
-        public ContentHashes(FileInfo file, bool hashed)
+        public ContentHashes(string file, bool hashed)
         {
             if (hashed)
             {
@@ -33,37 +33,37 @@ namespace CNUSPACKER.crypto
             }
         }
 
-        private void CalculateOtherHashes(int hash_level, Dictionary<int, byte[]> in_hashes, Dictionary<int, byte[]> out_hashes)
+        private void CalculateOtherHashes(int hashLevel, Dictionary<int, byte[]> inHashes, Dictionary<int, byte[]> outHashes)
         {
-            int hash_level_pow = 1 << (4 * hash_level);
+            int hash_level_pow = 1 << (4 * hashLevel);
 
-            int hashescount = (blockCount / hash_level_pow) + 1;
-            for (int new_block = 0; new_block < hashescount; new_block++)
+            int hashesCount = (blockCount / hash_level_pow) + 1;
+            for (int new_block = 0; new_block < hashesCount; new_block++)
             {
                 byte[] cur_hashes = new byte[16 * 20];
                 for (int i = new_block * 16; i < (new_block * 16) + 16; i++)
                 {
-                    if (in_hashes.ContainsKey(i))
-                        Array.Copy(in_hashes[i], 0, cur_hashes, (i % 16) * 20, 20);
+                    if (inHashes.ContainsKey(i))
+                        Array.Copy(inHashes[i], 0, cur_hashes, (i % 16) * 20, 20);
                 }
-                out_hashes.Add(new_block, HashUtil.HashSHA1(cur_hashes));
+                outHashes.Add(new_block, HashUtil.HashSHA1(cur_hashes));
 
                 if (new_block % 100 == 0)
                 {
-                    Console.Write($"\rcalculating h{hash_level}: {100 * new_block / hashescount}%");
+                    Console.Write($"\rcalculating h{hashLevel}: {100 * new_block / hashesCount}%");
                 }
             }
-            Console.WriteLine($"\rcalculating h{hash_level}: done");
+            Console.WriteLine($"\rcalculating h{hashLevel}: done");
         }
 
-        private void CalculateH0Hashes(FileInfo file)
+        private void CalculateH0Hashes(string file)
         {
-            using FileStream input = file.Open(FileMode.Open);
+            using FileStream input = new FileStream(file, FileMode.Open);
 
             const int bufferSize = 0xFC00;
 
             byte[] buffer = new byte[bufferSize];
-            int total_blocks = (int)(file.Length / bufferSize) + 1;
+            int total_blocks = (int)(input.Length / bufferSize) + 1;
             for (int block = 0; block < total_blocks; block++)
             {
                 input.Read(buffer, 0, bufferSize);

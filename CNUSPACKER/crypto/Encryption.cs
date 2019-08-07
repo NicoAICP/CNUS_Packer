@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
-using CNUSPACKER.contents;
 using CNUSPACKER.packaging;
 using CNUSPACKER.utils;
 
@@ -19,9 +18,9 @@ namespace CNUSPACKER.crypto
             aes.IV = iv.iv;
         }
 
-        public void EncryptFileWithPadding(FST fst, string output_filename, short contentID, int blockSize)
+        public void EncryptFileWithPadding(FST fst, string outputFilename, short contentID, int blockSize)
         {
-            using FileStream output = new FileStream(output_filename, FileMode.Create);
+            using FileStream output = new FileStream(outputFilename, FileMode.Create);
 
             MemoryStream input = new MemoryStream(fst.GetAsData());
             BigEndianMemoryStream ivStream = new BigEndianMemoryStream(0x10);
@@ -31,19 +30,16 @@ namespace CNUSPACKER.crypto
             EncryptSingleFile(input, output, fst.GetDataSize(), iv, blockSize);
         }
 
-        public void EncryptFileWithPadding(FileInfo file, Content content, string output_filename, int blockSize)
+        public void EncryptFileWithPadding(FileStream input, int contentID, FileStream output, int blockSize)
         {
-            using FileStream input = file.Open(FileMode.Open);
-            using FileStream output = new FileStream(output_filename, FileMode.Create);
-
             BigEndianMemoryStream ivStream = new BigEndianMemoryStream(0x10);
-            ivStream.WriteBigEndian((short)content.ID);
+            ivStream.WriteBigEndian((short)contentID);
             IV iv = new IV(ivStream.GetBuffer());
 
-            EncryptSingleFile(input, output, file.Length, iv, blockSize);
+            EncryptSingleFile(input, output, input.Length, iv, blockSize);
         }
 
-        private void EncryptSingleFile(Stream input, FileStream output, long inputLength, IV iv, int blockSize)
+        private void EncryptSingleFile(Stream input, Stream output, long inputLength, IV iv, int blockSize)
         {
             aes.IV = iv.iv;
             long targetSize = Utils.Align(inputLength, blockSize);
@@ -63,16 +59,12 @@ namespace CNUSPACKER.crypto
             } while (cur_position < targetSize);
         }
 
-        public void EncryptFileHashed(FileInfo inputFile, Content content, string outputFilename, ContentHashes hashes)
+        public void EncryptFileHashed(FileStream input, int contentID, FileStream output, ContentHashes hashes)
         {
-            using FileStream ins = inputFile.Open(FileMode.Open);
-            using FileStream outs = File.Open(outputFilename, FileMode.Create);
-
-            EncryptFileHashed(ins, outs, inputFile.Length, content, hashes);
-            content.encryptedFileSize = outs.Length;
+            EncryptFileHashed(input, output, input.Length, contentID, hashes);
         }
 
-        private void EncryptFileHashed(FileStream input, FileStream output, long length, Content content, ContentHashes hashes)
+        private void EncryptFileHashed(Stream input, Stream output, long length, int contentID, ContentHashes hashes)
         {
             const int hashBlockSize = 0xFC00;
 
@@ -83,7 +75,7 @@ namespace CNUSPACKER.crypto
             {
                 read = input.Read(buffer, 0, hashBlockSize);
 
-                output.Write(EncryptChunkHashed(buffer, block, hashes, content.ID));
+                output.Write(EncryptChunkHashed(buffer, block, hashes, contentID));
 
                 block++;
                 if (block % 100 == 0)

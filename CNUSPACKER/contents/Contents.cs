@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,30 +9,18 @@ namespace CNUSPACKER.contents
 {
     public class Contents
     {
-        public readonly List<Content> contents = new List<Content>();
+        private readonly List<Content> contents = new List<Content>();
         public readonly Content fstContent;
 
         public Contents()
         {
             ContentDetails details = new ContentDetails(false, 0, 0, 0);
-            fstContent = GetNewContent(details);
-            fstContent.isFSTContent = true;
+            fstContent = GetNewContent(details, true);
         }
 
-        public Content GetNewContent(ContentDetails details)
+        public Content GetNewContent(ContentDetails details, bool isFSTContent = false)
         {
-            Content content = new Content
-            {
-                ID = contents.Count,
-                index = (short) contents.Count,
-                entriesFlags = details.entriesFlag,
-                groupID = details.groupID,
-                parentTitleID = details.parentTitleID
-            };
-            if (details.isHashed)
-            {
-                content.AddType(Content.TYPE_HASHED);
-            }
+            Content content = new Content(contents.Count, (short) contents.Count, details.entriesFlag, details.groupID, details.parentTitleID, details.isHashed, isFSTContent);
             contents.Add(content);
 
             return content;
@@ -58,9 +45,9 @@ namespace CNUSPACKER.contents
         {
             long content_offset = 0;
             MemoryStream buffer = new MemoryStream(GetFSTContentHeaderDataSize());
-            foreach (Content c in contents)
+            foreach (Content content in contents)
             {
-                (long key, byte[] value) = c.GetFSTContentHeaderAsData(content_offset);
+                (long key, byte[] value) = content.GetFSTContentHeaderAsData(content_offset);
                 content_offset = key;
                 buffer.Write(value);
             }
@@ -75,38 +62,29 @@ namespace CNUSPACKER.contents
 
         public void ResetFileOffsets()
         {
-            foreach (Content c in contents)
+            foreach (Content content in contents)
             {
-                c.ResetFileOffset();
+                content.ResetFileOffset();
             }
         }
 
         public void Update(FSTEntries fileEntries)
         {
-            foreach (Content c in contents)
+            foreach (Content content in contents)
             {
-                c.Update(fileEntries.GetFSTEntriesByContent(c));
+                content.Update(fileEntries.GetFSTEntriesByContent(content));
             }
         }
 
-        public void PackContents(string outputDir)
+        public void PackContents(string outputDir, Encryption encryption)
         {
-            foreach (Content c in contents)
+            foreach (Content content in contents)
             {
-                if (!c.Equals(fstContent))
+                if (!content.Equals(fstContent))
                 {
-                    c.PackContentToFile(outputDir);
+                    content.PackContentToFile(outputDir, encryption);
                 }
             }
-            NUSpackage nuspackage = NUSPackageFactory.GetPackageByContents(this);
-            Encryption encryption = nuspackage.GetEncryption();
-
-            Console.WriteLine($"Packing the FST into {fstContent.ID:X8}.app");
-            string fstPath = Path.Combine(outputDir, $"{fstContent.ID:X8}.app");
-            encryption.EncryptFileWithPadding(nuspackage.fst, fstPath, (short)fstContent.ID, Content.CONTENT_FILE_PADDING);
-
-            Console.WriteLine("-------------");
-            Console.WriteLine("Packed all contents\n\n");
         }
 
         public void DeleteContent(Content curContent)

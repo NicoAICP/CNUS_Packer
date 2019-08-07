@@ -41,7 +41,6 @@ namespace CNUSPACKER.fst
 
         public FSTEntry()
         {
-            filepath = null;
             isRoot = true;
             isDir = true;
         }
@@ -132,8 +131,7 @@ namespace CNUSPACKER.fst
         {
             if (nameOffset > 0xFFFFFF)
             {
-                Console.WriteLine(
-                    $"Warning: filename offset is too big. Maximum is {0xFFFFFF}, tried to set to {nameOffset}");
+                Console.WriteLine($"Warning: filename offset is too big. Maximum is {0xFFFFFF}, tried to set to {nameOffset}");
             }
             this.nameOffset = nameOffset;
         }

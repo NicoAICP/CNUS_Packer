@@ -17,10 +17,10 @@ namespace CNUSPACKER.utils
             return sha1.ComputeHash(data);
         }
 
-        public static byte[] HashSHA1(FileInfo file, int alignment)
+        public static byte[] HashSHA1(string file, int alignment)
         {
             SHA1 sha1 = SHA1.Create();
-            using FileStream input = file.Open(FileMode.Open);
+            using FileStream input = new FileStream(file, FileMode.Open);
 
             long targetSize = Utils.Align(input.Length, alignment);
             byte[] alignedFileContents = new byte[targetSize];

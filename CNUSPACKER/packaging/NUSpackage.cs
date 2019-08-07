@@ -8,19 +8,33 @@ namespace CNUSPACKER.packaging
 {
     public class NUSpackage
     {
-        public Ticket ticket { get; set; }
-        public TMD tmd { get; set; }
-        public FST fst { get; set; }
+        private readonly FST fst;
+        private readonly Ticket ticket;
+        private readonly TMD tmd;
+
+        public NUSpackage(FST fst, Ticket ticket, TMD tmd)
+        {
+            this.fst = fst;
+            this.ticket = ticket;
+            this.tmd = tmd;
+        }
 
         public void PackContents(string outputDir)
         {
             Console.WriteLine("Packing Contents.");
 
-            fst.contents.PackContents(outputDir);
+            Encryption encryption = GetEncryption();
+            fst.contents.PackContents(outputDir, encryption);
+
+            Console.WriteLine("Packing the FST into 00000000.app");
+            string fstPath = Path.Combine(outputDir, "00000000.app");
+            encryption.EncryptFileWithPadding(fst, fstPath, 0, Content.CONTENT_FILE_PADDING);
+            Console.WriteLine("-------------");
+            Console.WriteLine("Packed all contents\n\n");
 
             Content fstContent = fst.contents.fstContent;
             fstContent.SHA1 = HashUtil.HashSHA1(fst.GetAsData());
-            fstContent.encryptedFileSize = fst.GetAsData().Length;
+            fstContent.encryptedFileSize = fst.GetDataSize();
 
             tmd.contentInfo.SHA2Hash = HashUtil.HashSHA2(fst.contents.GetAsData());
             tmd.UpdateContentInfoHash();
@@ -54,7 +68,7 @@ namespace CNUSPACKER.packaging
             Console.WriteLine($"Encrypted key                     : {ticket.GetEncryptedKey()}");
         }
 
-        public Encryption GetEncryption()
+        private Encryption GetEncryption()
         {
             return tmd.GetEncryption();
         }

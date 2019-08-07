@@ -22,12 +22,12 @@ namespace CNUSPACKER.packaging
         private readonly uint appType;
         private const int accessRights = 0x0000;
         private readonly short titleVersion;
-        private short contentCount;
+        private readonly short contentCount;
         private const short bootIndex = 0x00;
         private byte[] SHA2;
 
-        public ContentInfo contentInfo;
-        private Contents contents = new Contents();
+        public readonly ContentInfo contentInfo;
+        private readonly Contents contents;
 
         private readonly Ticket ticket;
 
@@ -38,27 +38,9 @@ namespace CNUSPACKER.packaging
             appType = appInfo.appType;
             titleVersion = appInfo.titleVersion;
             this.ticket = ticket;
-            SetContents(fst.contents);
-        }
-
-        private void SetContents(Contents contents)
-        {
-            if (contents != null)
-            {
-                this.contents = contents;
-                contentCount = contents.GetContentCount();
-            }
-        }
-
-        public void Update()
-        {
-            UpdateContents();
-        }
-
-        private void UpdateContents()
-        {
+            contents = fst.contents;
             contentCount = contents.GetContentCount();
-            contentInfo = new ContentInfo(contents.GetContentCount())
+            contentInfo = new ContentInfo(contentCount)
             {
                 SHA2Hash = HashUtil.HashSHA2(contents.GetAsData())
             };
@@ -116,9 +98,8 @@ namespace CNUSPACKER.packaging
         {
             BigEndianMemoryStream ivStream = new BigEndianMemoryStream(0x10);
             ivStream.WriteBigEndian(ticket.titleID);
-            Key key = ticket.decryptedKey;
 
-            return new Encryption(key, new IV(ivStream.GetBuffer()));
+            return new Encryption(ticket.decryptedKey, new IV(ivStream.GetBuffer()));
         }
     }
 }

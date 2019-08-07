@@ -7,9 +7,9 @@ namespace CNUSPACKER.packaging
 {
     public class Ticket
     {
-        public long titleID { get; }
-        public Key decryptedKey { get; }
-        public Key encryptWith { get; }
+        public readonly long titleID;
+        public readonly Key decryptedKey;
+        public readonly Key encryptWith;
 
         public Ticket(long titleID, Key decryptedKey, Key encryptWith)
         {

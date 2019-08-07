@@ -17,9 +17,7 @@ namespace CNUSPACKER.packaging
 
         private static readonly MemoryStream strings = new MemoryStream();
 
-        public static int curEntryOffset;
-
-        private byte[] alignment;
+        public static int curEntryOffset { get; set; }
 
         public FST(Contents contents)
         {
@@ -28,9 +26,6 @@ namespace CNUSPACKER.packaging
 
         public void Update()
         {
-            strings.SetLength(0);
-            curEntryOffset = 0;
-
             contents.ResetFileOffsets();
             fileEntries.Update();
             contents.Update(fileEntries);
@@ -61,7 +56,6 @@ namespace CNUSPACKER.packaging
             buffer.Write(contents.GetFSTContentHeaderAsData());
             buffer.Write(fileEntries.GetAsData());
             buffer.Write(strings.ToArray());
-            buffer.Write(alignment);
 
             return buffer.GetBuffer();
         }
@@ -76,10 +70,7 @@ namespace CNUSPACKER.packaging
             size += contents.GetFSTContentHeaderDataSize();
             size += fileEntries.GetDataSize();
             size += (int)strings.Position;
-            int newsize = (int)Utils.Align(size, 0x8000);
-            alignment = new byte[newsize - size];
-
-            return newsize;
+            return (int)Utils.Align(size, 0x8000);
         }
     }
 }

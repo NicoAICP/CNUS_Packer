@@ -121,7 +121,7 @@ namespace CNUSPACKER
             AppXMLInfo appinfo = new AppXMLInfo
             {
                 titleID = titleID,
-                groupID = (short) (titleID >> 8),
+                groupID = (short)(titleID >> 8),
                 appType = appType,
                 osVersion = osVersion,
                 titleVersion = titleVersion

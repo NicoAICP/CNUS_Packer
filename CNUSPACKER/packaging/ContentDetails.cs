@@ -4,11 +4,11 @@ namespace CNUSPACKER.packaging
     {
         private const bool isContent = true;
         private const bool isEncrypted = true;
-        public bool isHashed { get; }
-        public short groupID { get; }
-        public long parentTitleID { get; }
 
-        public short entriesFlag { get; }
+        public readonly bool isHashed;
+        public readonly short groupID;
+        public readonly long parentTitleID;
+        public readonly short entriesFlag;
 
         public ContentDetails(bool isHashed, short groupID, long parentTitleID, short entriesFlag)
         {

@@ -8,7 +8,9 @@ namespace CNUSPACKER.utils
         public static void DeleteDir(string dir)
         {
             foreach (string filepath in Directory.EnumerateFiles(dir))
+            {
                 File.Delete(filepath);
+            }
 
             Directory.Delete(dir);
         }
@@ -37,10 +39,9 @@ namespace CNUSPACKER.utils
         public static string ByteArrayToHexString(byte[] bytes)
         {
             char[] c = new char[bytes.Length * 2];
-            int b;
             for (int i = 0; i < bytes.Length; i++)
             {
-                b = bytes[i] >> 4;
+                int b = bytes[i] >> 4;
                 c[i * 2] = (char)(55 + b + (((b - 10) >> 31) & -7));
                 b = bytes[i] & 0xF;
                 c[i * 2 + 1] = (char)(55 + b + (((b - 10) >> 31) & -7));

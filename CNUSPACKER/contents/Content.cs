@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using CNUSPACKER.crypto;
 using CNUSPACKER.fst;
-using CNUSPACKER.packaging;
 using CNUSPACKER.utils;
 
 namespace CNUSPACKER.contents
@@ -13,50 +12,48 @@ namespace CNUSPACKER.contents
         public const int staticFSTContentHeaderDataSize = 32;
         public const int staticDataSize = 48;
         public const int CONTENT_FILE_PADDING = 32768;
-        public const short TYPE_HASHED = 2;
 
         private const int ALIGNMENT_IN_CONTENT_FILE = 32;
         private const short TYPE_CONTENT = 8192;
         private const short TYPE_ENCRYPTED = 1;
+        private const short TYPE_HASHED = 2;
 
-        private short type = TYPE_CONTENT | TYPE_ENCRYPTED;
+        private readonly short type = TYPE_CONTENT | TYPE_ENCRYPTED;
+        private bool IsHashed => (type & TYPE_HASHED) == TYPE_HASHED;
         private long curFileOffset;
         private List<FSTEntry> entries = new List<FSTEntry>();
 
-        public int ID { get; set; }
-        public short index { get; set; }
+        public readonly int ID;
+        private readonly short index;
         public long encryptedFileSize { get; set; }
         public byte[] SHA1 { get; set; } = new byte[20];
-        public int groupID { get; set; }
-        public long parentTitleID { get; set; }
-        public short entriesFlags { get; set; }
-        public bool isFSTContent { get; set; }
+        private readonly int groupID;
+        private readonly long parentTitleID;
+        public readonly short entriesFlags;
+        private readonly bool isFSTContent;
 
-        public void AddType(short type)
+        public Content(int ID, short index, short entriesFlags, int groupID, long parentTitleID, bool isHashed, bool isFSTContent)
         {
-            this.type |= type;
+            this.ID = ID;
+            this.index = index;
+            this.entriesFlags = entriesFlags;
+            this.groupID = groupID;
+            this.parentTitleID = parentTitleID;
+            if (isHashed)
+                type |= TYPE_HASHED;
+            this.isFSTContent = isFSTContent;
         }
 
-        public void RemoveType(short type)
-        {
-            this.type &= (short)~type;
-        }
-
-        private bool IsHashed()
-        {
-            return (type & TYPE_HASHED) == TYPE_HASHED;
-        }
-
-        public KeyValuePair<long, byte[]> GetFSTContentHeaderAsData(long old_content_offset)
+        public KeyValuePair<long, byte[]> GetFSTContentHeaderAsData(long oldContentOffset)
         {
             BigEndianMemoryStream buffer = new BigEndianMemoryStream(staticFSTContentHeaderDataSize);
 
             byte unknown;
-            long content_offset = old_content_offset;
+            long content_offset = oldContentOffset;
             long fst_content_size = encryptedFileSize / CONTENT_FILE_PADDING;
             long fst_content_size_written = fst_content_size;
 
-            if (IsHashed())
+            if (IsHashed)
             {
                 unknown = 2;
                 fst_content_size_written -= ((fst_content_size / 64) + 1) * 2;
@@ -81,7 +78,7 @@ namespace CNUSPACKER.contents
                 content_offset += fst_content_size;
             }
 
-            buffer.WriteBigEndian((int)old_content_offset);
+            buffer.WriteBigEndian((int)oldContentOffset);
             buffer.WriteBigEndian((int)fst_content_size_written);
             buffer.WriteBigEndian(parentTitleID);
             buffer.WriteBigEndian(groupID);
@@ -116,22 +113,20 @@ namespace CNUSPACKER.contents
             return buffer.GetBuffer();
         }
 
-        public void PackContentToFile(string outputDir)
+        public void PackContentToFile(string outputDir, Encryption encryption)
         {
             Console.WriteLine($"Packing Content {ID:X8}\n");
 
-            NUSpackage nusPackage = NUSPackageFactory.GetPackageByContent(this);
-            Encryption encryption = nusPackage.GetEncryption();
             Console.WriteLine("Packing files into one file:");
             //At first we need to create the decrypted file.
-            FileInfo decryptedFile = PackDecrypted();
+            string decryptedFile = PackDecrypted();
 
             Console.WriteLine();
             Console.WriteLine("Generate hashes:");
             //Calculates the hashes for the decrypted content. If the content is not hashed,
             //only the hash of the decrypted file will be calculated
 
-            ContentHashes contentHashes = new ContentHashes(decryptedFile, IsHashed());
+            ContentHashes contentHashes = new ContentHashes(decryptedFile, IsHashed);
 
             string h3Path = Path.Combine(outputDir, $"{ID:X8}.h3");
 
@@ -139,31 +134,32 @@ namespace CNUSPACKER.contents
             SHA1 = contentHashes.TMDHash;
             Console.WriteLine();
             Console.WriteLine($"Encrypt content ({ID:X8})");
-            FileInfo encryptedFile = PackEncrypted(outputDir, decryptedFile, contentHashes, encryption);
-
-            encryptedFileSize = encryptedFile.Length;
+            string outputFilePath = Path.Combine(outputDir, $"{ID:X8}.app");
+            encryptedFileSize = PackEncrypted(decryptedFile, outputFilePath, contentHashes, encryption);
 
             Console.WriteLine();
-            Console.WriteLine($"Content {ID:X8} packed to file \"{encryptedFile.Name}\"!");
+            Console.WriteLine($"Content {ID:X8} packed to file \"{ID:X8}.app\"!");
             Console.WriteLine("-------------");
         }
 
-        private FileInfo PackEncrypted(string outputDir, FileInfo decryptedFile, ContentHashes hashes, Encryption encryption)
+        private long PackEncrypted(string decryptedFile, string outputFilePath, ContentHashes hashes, Encryption encryption)
         {
-            string outputFilePath = Path.Combine(outputDir, $"{ID:X8}.app");
-            if((type & TYPE_HASHED) == TYPE_HASHED)
+            using FileStream input = new FileStream(decryptedFile, FileMode.Open);
+            using FileStream output = new FileStream(outputFilePath, FileMode.Create);
+
+            if (IsHashed)
             {
-                encryption.EncryptFileHashed(decryptedFile, this, outputFilePath, hashes);
+                encryption.EncryptFileHashed(input, ID, output, hashes);
             }
             else
             {
-                encryption.EncryptFileWithPadding(decryptedFile, this, outputFilePath, CONTENT_FILE_PADDING);
+                encryption.EncryptFileWithPadding(input, ID, output, CONTENT_FILE_PADDING);
             }
 
-            return new FileInfo(Path.GetFullPath(outputFilePath));
+            return output.Length;
         }
 
-        private FileInfo PackDecrypted()
+        private string PackDecrypted()
         {
             string tmpPath = Path.Combine(Settings.tmpDir, $"{ID:X8}.dec");
             using (FileStream fos = new FileStream(tmpPath, FileMode.Create))
@@ -196,7 +192,7 @@ namespace CNUSPACKER.contents
                 }
             }
 
-            return new FileInfo(Path.GetFullPath(tmpPath));
+            return tmpPath;
         }
 
         public void Update(List<FSTEntry> entries)
@@ -210,9 +206,7 @@ namespace CNUSPACKER.contents
         public bool Equals(Content other)
         {
             if (other == null)
-            {
                 return false;
-            }
 
             return ID == other.ID;
         }
