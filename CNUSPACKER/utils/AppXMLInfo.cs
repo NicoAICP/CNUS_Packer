@@ -1,116 +1,21 @@
-namespace CNUS_packer.utils
+namespace CNUSPACKER.utils
 {
     public class AppXMLInfo
     {
-        private int version = 0;
-        private long osVersion = 0x0L;
-        private long titleID = 0x0L;
-        private short titleVersion = 0;
-        private uint sdkVersion = 0;
-        private uint appType = 0x0;
-        private short groupID = 0;
-        private byte[] osMask = new byte[32];
-        private long common_id = 0x0L;
-
-        public AppXMLInfo()
-        {
-        }
-
-        public int GetVersion()
-        {
-            return version;
-        }
-
-        public void SetVersion(int value)
-        {
-            version = value;
-        }
-
-        public long GetOsVersion()
-        {
-            return osVersion;
-        }
-
-        public void SetOsVersion(long value)
-        {
-            osVersion = value;
-        }
-
-        public long GetTitleID()
-        {
-            return titleID;
-        }
-
-        public void SetTitleID(long value)
-        {
-            titleID = value;
-        }
-
-        public short GetTitleVersion()
-        {
-            return titleVersion;
-        }
-
-        public void SetTitleVersion(short value)
-        {
-            titleVersion = value;
-        }
-
-        public uint GetSdkVersion()
-        {
-            return sdkVersion;
-        }
-
-        public void SetSdkVersion(uint value)
-        {
-            sdkVersion = value;
-        }
-
-        public uint GetAppType()
-        {
-            return appType;
-        }
-
-        public void SetAppType(uint value)
-        {
-            appType = value;
-        }
-
-        public short GetGroupID()
-        {
-            return groupID;
-        }
-
-        public void SetGroupID(short value)
-        {
-            groupID = value;
-        }
-
-        public byte[] GetOSMask()
-        {
-            return osMask;
-        }
-
-        public void SetOSMask(byte[] value)
-        {
-            osMask = value;
-        }
-
-        public long GetCommon_id()
-        {
-            return common_id;
-        }
-
-        public void SetCommon_id(long value)
-        {
-            common_id = value;
-        }
+        private const int version = 0;
+        public long osVersion { get; set; }
+        public long titleID { get; set; }
+        public short titleVersion { get; set; }
+        public uint sdkVersion { get; set; }
+        public uint appType { get; set; }
+        public short groupID { get; set; }
+        public byte[] osMask { get; set; } = new byte[32];
+        public long commonID { get; set; }
 
         public override string ToString()
         {
-            return "AppXMLInfo [version=" + version + ", OSVersion=" + osVersion + ", titleID=" + titleID
-                + ", titleVersion=" + titleVersion + ", SDKVersion=" + sdkVersion + ", appType=" + appType
-                + ", groupID=" + groupID + ", OSMask=" + osMask.ToString() + ", common_id=" + common_id + "]";
+            return $"AppXMLInfo [version={version}, OSVersion={osVersion}, titleID={titleID}, titleVersion={titleVersion}, " +
+                   $"SDKVersion={sdkVersion}, appType={appType}, groupID={groupID}, OSMask={Utils.ByteArrayToHexString(osMask)}, common_id={commonID}]";
         }
     }
 }

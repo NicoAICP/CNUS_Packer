@@ -1,158 +1,137 @@
-using CNUS_packer.contents;
-using CNUS_packer.fst;
-
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using CNUSPACKER.contents;
+using CNUSPACKER.fst;
 
-namespace CNUS_packer.packaging
+namespace CNUSPACKER.packaging
 {
-    public class ContentRulesService
+    public static class ContentRulesService
     {
-        public static long MAX_CONTENT_LENGTH = (long)(0xBFFFFFFFL * 0.975);
+        private const long MAX_CONTENT_LENGTH = (long) (0xBFFFFFFFL * 0.975);
 
-        public static long cur_content_size = 0L;
+        private static long cur_content_size;
 
-        public static Content cur_content = null;
-        public static Content cur_content_first = null;
+        private static Content cur_content;
+        private static Content cur_content_first;
 
-        public static void applyRules(FSTEntry root, Contents targetContents, ContentRules rules)
+        public static void ApplyRules(FSTEntry root, Contents targetContents, List<ContentRule> rules)
         {
             Console.WriteLine("-----");
-            foreach (ContentRules.ContentRule rule in rules.GetRules())
+            foreach (ContentRule rule in rules)
             {
-                Console.WriteLine("Apply rule \"" + rule.getPattern() + "\"");
-                if (rule.isContentPerMatch())
+                Console.WriteLine("Apply rule \"" + rule.pattern + "\"");
+                if (rule.contentPerMatch)
                 {
-                    setNewContentRecursiveRule("", rule.getPattern(), root, targetContents, rule);
+                    SetNewContentRecursiveRule("", root, targetContents, rule);
                 }
                 else
                 {
-                    cur_content = targetContents.getNewContent(rule.getDetails());
+                    cur_content = targetContents.GetNewContent(rule.details);
                     cur_content_first = cur_content;
                     cur_content_size = 0L;
-                    bool result = setContentRecursiveRule("", rule.getPattern(), root, targetContents, rule.getDetails());
+                    bool result = SetContentRecursiveRule("", root, targetContents, rule);
                     if (!result)
                     {
                         Console.WriteLine("No file matched the rule. Lets delete the content again");
-                        targetContents.deleteContent(cur_content);
+                        targetContents.DeleteContent(cur_content);
                     }
-                    cur_content_first = null;
                 }
                 Console.WriteLine("-----");
             }
         }
 
-        private static Content setNewContentRecursiveRule(string path, string pattern, FSTEntry cur_entry, Contents targetContents, ContentRules.ContentRule rule)
+        private static Content SetNewContentRecursiveRule(string path, FSTEntry currentEntry, Contents targetContents, ContentRule rule)
         {
-            path += cur_entry.getFilename() + "/";
-            Regex p =  new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            path += currentEntry.filename + "/";
+            Regex p = new Regex(rule.pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             Content result = null;
 
-            if (cur_entry.getChildren().Count == 0)
+            if (currentEntry.children.Count == 0)
             {
-                MatchCollection m = p.Matches(path);
-                // Console.WriteLine("Trying rule \"" + p + "\" for string \"" + filePath + "\"");
-                if (m.Count > 0)
+                Match m = p.Match(path);
+                if (m.Success)
                 {
-                    Content result_content = targetContents.getNewContent(rule.getDetails());
-                    result = result_content;
+                    result = targetContents.GetNewContent(rule.details);
                 }
             }
-            foreach (FSTEntry child in cur_entry.getChildren())
+
+            foreach (FSTEntry child in currentEntry.children)
             {
-                if (child.getIsDir())
+                if (child.isDir)
                 {
-                    Content child_result = setNewContentRecursiveRule(path, pattern, child, targetContents, rule);
-                    if (child_result != null)
-                    {
-                        result = child_result;
-                    }
+                    result = SetNewContentRecursiveRule(path, child, targetContents, rule) ?? result;
                 }
                 else
                 {
-                    string filePath = path + child.getFilename();
-                    Match m = p.Match(filePath);
-                    // Console.WriteLine("Trying rule \"" + p + "\" for string \"" + filePath + "\"");
+                    string childPath = path + child.filename;
+                    Match m = p.Match(childPath);
                     if (m.Success)
                     {
-                        Content result_content = targetContents.getNewContent(rule.getDetails());
-                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + result_content.ID.ToString("X") + " for: " + filePath);
-                        child.setContent(result_content);
+                        Content result_content = targetContents.GetNewContent(rule.details);
+                        Console.WriteLine($"Set content to {result_content.ID:X} for: {childPath}");
+                        child.SetContent(result_content);
                         result = result_content;
                     }
                 }
             }
+
             if (result != null)
-            {
-                cur_entry.setContent(result);
-            }
+                currentEntry.SetContent(result);
+
             return result;
         }
 
-        private static bool setContentRecursiveRule(string path, string pattern, FSTEntry cur_entry, Contents targetContents, ContentDetails contentDetails)
+        private static bool SetContentRecursiveRule(string path, FSTEntry currentEntry, Contents targetContents, ContentRule rule)
         {
-            path += cur_entry.getFilename() + "/";
-            Regex p = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            bool result = false;
-            if (cur_entry.getChildren().Count == 0)
+            path += currentEntry.filename + "/";
+            Regex p = new Regex(rule.pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            bool matchFound = false;
+            if (currentEntry.children.Count == 0)
             {
                 Match m = p.Match(path);
-                // Console.WriteLine("Trying rule \"" + p + "\" for string \"" + filePath + "\"");
                 if (m.Success)
                 {
-                    if (!cur_entry.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.ID.ToString("X") + " (" + cur_content_size.ToString("X") + "," + cur_entry.getFilesize().ToString("X") + ") for: " + path);
-                    if (cur_entry.getChildren().Count == 0/* && cur_entry.getFilename().equals("content")*/)
-                    {  //TODO: may could cause problems. Current solution only apply to content folder.
-                        cur_entry.setContent(cur_content);
-                    }
+                    Console.WriteLine($"Set content to {cur_content.ID:X} ({cur_content_size:X},{currentEntry.fileSize:X}) for: {path}");
+                    currentEntry.SetContent(cur_content);
 
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
-            }
-            foreach (FSTEntry child in cur_entry.getChildren())
-            {
-                if (child.getIsDir())
-                {
 
-                    bool child_result = setContentRecursiveRule(path, pattern, child, targetContents, contentDetails);
-                    if (child_result)
-                    {
-                        cur_entry.setContent(cur_content_first);
-                        result = true;
-                    }
+                return false;
+            }
+
+            foreach (FSTEntry child in currentEntry.children)
+            {
+                if (child.isDir)
+                {
+                    matchFound |= SetContentRecursiveRule(path, child, targetContents, rule);
                 }
                 else
                 {
-                    string filePath = path + child.getFilename();
-                    Match m = p.Match(filePath);
-                    // Console.WriteLine("Trying rule \"" + p + "\" for string \"" + filePath + "\"");
+                    string childPath = path + child.filename;
+                    Match m = p.Match(childPath);
                     if (m.Success)
                     {
-                        if (cur_content_size > 0 && (cur_content_size + child.getFilesize()) > MAX_CONTENT_LENGTH)
+                        if (cur_content_size + child.fileSize > MAX_CONTENT_LENGTH)
                         {
-                            Console.WriteLine("Info: Target content size is bigger than " + MAX_CONTENT_LENGTH + " bytes. Content will be splitted in mutitple files. Don't worry, I'll automatically take care of everything!");
-                            cur_content = targetContents.getNewContent(contentDetails);
+                            Console.WriteLine($"Info: Target content size is bigger than {MAX_CONTENT_LENGTH} bytes. Content will be split into multiple files.");
+                            cur_content = targetContents.GetNewContent(rule.details);
                             cur_content_size = 0;
                         }
-                        cur_content_size += child.getFilesize();
+                        cur_content_size += child.fileSize;
 
-                        if (!child.isNotInPackage()) Console.WriteLine("Set content to " + cur_content.ID .ToString("X") + " ("+cur_content_size.ToString("X")+","+child.getFilesize().ToString("X") + ") for: " + filePath);
-                        child.setContent(cur_content);
-                        result = true;
+                        Console.WriteLine($"Set content to {cur_content.ID:X} ({cur_content_size:X},{child.fileSize:X}) for: {childPath}");
+                        child.SetContent(cur_content);
+                        matchFound = true;
                     }
                 }
             }
 
-            if (result)
-            {
-                cur_entry.setContent(cur_content_first);
-            }
+            if (matchFound)
+                currentEntry.SetContent(cur_content_first);
 
-            return result;
+            return matchFound;
         }
     }
 }

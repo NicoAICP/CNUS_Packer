@@ -1,28 +1,27 @@
-using CNUS_packer.crypto;
-using CNUS_packer.utils;
-
 using System;
 using System.IO;
+using CNUSPACKER.crypto;
+using CNUSPACKER.utils;
 
-namespace CNUS_packer.packaging
+namespace CNUSPACKER.packaging
 {
     public class Ticket
     {
-        private long titleID;
-        private Key decryptedKey = new Key();
-        private Key encryptWith = new Key();
+        public readonly long titleID;
+        public readonly Key decryptedKey;
+        public readonly Key encryptWith;
 
         public Ticket(long titleID, Key decryptedKey, Key encryptWith)
         {
-            setTitleID(titleID);
-            setDecryptedKey(decryptedKey);
-            setEncryptWith(encryptWith);
+            this.titleID = titleID;
+            this.decryptedKey = decryptedKey;
+            this.encryptWith = encryptWith;
         }
 
-        public byte[] getAsData()
+        public byte[] GetAsData()
         {
             Random rdm = new Random();
-            MemoryStream buffer = new MemoryStream(0x350);
+            BigEndianMemoryStream buffer = new BigEndianMemoryStream(0x350);
             buffer.Write(Utils.HexStringToByteArray("00010004"));
             byte[] randomData = new byte[0x100];
             rdm.NextBytes(randomData);
@@ -31,15 +30,13 @@ namespace CNUS_packer.packaging
             buffer.Write(Utils.HexStringToByteArray("526F6F742D434130303030303030332D58533030303030303063000000000000"));
             buffer.Seek(0x5C, SeekOrigin.Current);
             buffer.Write(Utils.HexStringToByteArray("010000"));
-            buffer.Write(getEncryptedKey().getKey());
+            buffer.Write(GetEncryptedKey().key);
             buffer.Write(Utils.HexStringToByteArray("000005"));
             randomData = new byte[0x06];
             rdm.NextBytes(randomData);
             buffer.Write(randomData);
             buffer.Seek(0x04, SeekOrigin.Current);
-            byte[] temp = BitConverter.GetBytes(getTitleID());
-            Array.Reverse(temp);
-            buffer.Write(temp);
+            buffer.WriteBigEndian(titleID);
             buffer.Write(Utils.HexStringToByteArray("00000011000000000000000000000005"));
             buffer.Seek(0xB0, SeekOrigin.Current);
             buffer.Write(Utils.HexStringToByteArray("00010014000000AC000000140001001400000000000000280000000100000084000000840003000000000000FFFFFF01"));
@@ -48,45 +45,13 @@ namespace CNUS_packer.packaging
             return buffer.GetBuffer();
         }
 
-        public Key getEncryptedKey()
+        public Key GetEncryptedKey()
         {
-            MemoryStream iv_buffer = new MemoryStream(0x10);
-            byte[] temp = BitConverter.GetBytes(getTitleID());
-            Array.Reverse(temp);
-            iv_buffer.Write(temp);
-            Encryption encrypt = new Encryption(getEncryptWith(), new IV(iv_buffer.GetBuffer()));
+            BigEndianMemoryStream ivStream = new BigEndianMemoryStream(0x10);
+            ivStream.WriteBigEndian(titleID);
+            Encryption encrypt = new Encryption(encryptWith, new IV(ivStream.GetBuffer()));
 
-            return new Key(encrypt.encrypt(getDecryptedKey().getKey()));
-        }
-
-        public long getTitleID()
-        {
-            return titleID;
-        }
-
-        public void setTitleID(long titleID)
-        {
-            this.titleID = titleID;
-        }
-
-        public Key getDecryptedKey()
-        {
-            return decryptedKey;
-        }
-
-        public void setDecryptedKey(Key decryptedKey)
-        {
-            this.decryptedKey = decryptedKey;
-        }
-
-        public Key getEncryptWith()
-        {
-            return encryptWith;
-        }
-
-        public void setEncryptWith(Key encryptWith)
-        {
-            this.encryptWith = encryptWith;
+            return new Key(encrypt.Encrypt(decryptedKey.key));
         }
     }
 }

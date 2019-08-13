@@ -1,12 +1,11 @@
-using CNUS_packer.utils;
-
 using System.IO;
+using CNUSPACKER.utils;
 
-namespace CNUS_packer.packaging
+namespace CNUSPACKER.packaging
 {
-    public class Cert
+    public static class Cert
     {
-        public static byte[] getCertAsData()
+        public static byte[] GetCertAsData()
         {
             MemoryStream buffer = new MemoryStream(0xA00);
 

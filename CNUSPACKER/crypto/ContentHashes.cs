@@ -1,102 +1,89 @@
-using CNUS_packer.contents;
-using CNUS_packer.utils;
-
 using System;
 using System.Collections.Generic;
 using System.IO;
+using CNUSPACKER.contents;
+using CNUSPACKER.utils;
 
-namespace CNUS_packer.crypto
+namespace CNUSPACKER.crypto
 {
     public class ContentHashes
     {
-        private readonly Dictionary<int, byte[]> h0hashes = new Dictionary<int, byte[]>();
-        private readonly Dictionary<int, byte[]> h1hashes = new Dictionary<int, byte[]>();
-        private readonly Dictionary<int, byte[]> h2hashes = new Dictionary<int, byte[]>();
-        private readonly Dictionary<int, byte[]> h3hashes = new Dictionary<int, byte[]>();
+        private readonly Dictionary<int, byte[]> h0Hashes = new Dictionary<int, byte[]>();
+        private readonly Dictionary<int, byte[]> h1Hashes = new Dictionary<int, byte[]>();
+        private readonly Dictionary<int, byte[]> h2Hashes = new Dictionary<int, byte[]>();
+        private readonly Dictionary<int, byte[]> h3Hashes = new Dictionary<int, byte[]>();
 
-        byte[] TMDHash = new byte[20];
+        public readonly byte[] TMDHash;
 
-        private int blockCount = 0;
+        private int blockCount;
 
-        public ContentHashes(FileInfo file, bool hashed)
+        public ContentHashes(string file, bool hashed)
         {
             if (hashed)
             {
-                calculateH0Hashes(file);
-                calculateOtherHashes(1, h0hashes, h1hashes);
-                calculateOtherHashes(2, h1hashes, h2hashes);
-                calculateOtherHashes(3, h2hashes, h3hashes);
-                setTMDHash(HashUtil.hashSHA1(getH3Hashes()));
+                CalculateH0Hashes(file);
+                CalculateOtherHashes(1, h0Hashes, h1Hashes);
+                CalculateOtherHashes(2, h1Hashes, h2Hashes);
+                CalculateOtherHashes(3, h2Hashes, h3Hashes);
+                TMDHash = HashUtil.HashSHA1(GetH3Hashes());
             }
             else
             {
-                setTMDHash(HashUtil.hashSHA1(file, Content.CONTENT_FILE_PADDING));
+                TMDHash = HashUtil.HashSHA1(file, Content.CONTENT_FILE_PADDING);
             }
         }
 
-        private void calculateOtherHashes(int hash_level, Dictionary<int, byte[]> in_hashes, Dictionary<int, byte[]> out_hashes)
+        private void CalculateOtherHashes(int hashLevel, Dictionary<int, byte[]> inHashes, Dictionary<int, byte[]> outHashes)
         {
-            int hash_level_pow = (int)Math.Pow(16, hash_level);
+            int hash_level_pow = 1 << (4 * hashLevel);
 
-            int hashescount = (blockCount / hash_level_pow) + 1;
-            int new_blocks = 0;
-
-            for (int j = 0; j < hashescount; j++)
+            int hashesCount = (blockCount / hash_level_pow) + 1;
+            for (int new_block = 0; new_block < hashesCount; new_block++)
             {
                 byte[] cur_hashes = new byte[16 * 20];
-                for (int i = j * 16; i < (j * 16) + 16; i++)
+                for (int i = new_block * 16; i < (new_block * 16) + 16; i++)
                 {
-                    if (in_hashes.ContainsKey(i))
-                    {
-                        byte[] cur_hash = in_hashes[i];
-                        Array.Copy(cur_hash, 0, cur_hashes, (i % 16) * 20, 20);
-                    }
+                    if (inHashes.ContainsKey(i))
+                        Array.Copy(inHashes[i], 0, cur_hashes, (i % 16) * 20, 20);
                 }
-                out_hashes.Add(new_blocks, HashUtil.hashSHA1(cur_hashes));
-                new_blocks++;
+                outHashes.Add(new_block, HashUtil.HashSHA1(cur_hashes));
 
-                int progress = 100 * new_blocks / hashescount;
-                if (new_blocks % 100 == 0)
+                if (new_block % 100 == 0)
                 {
-                    Console.Write("\rcalculating h" + hash_level + ": " + progress + "%");
+                    Console.Write($"\rcalculating h{hashLevel}: {100 * new_block / hashesCount}%");
                 }
             }
-            Console.WriteLine("\rcalculating h" + hash_level + ": done");
+            Console.WriteLine($"\rcalculating h{hashLevel}: done");
         }
 
-        private void calculateH0Hashes(FileInfo file)
+        private void CalculateH0Hashes(string file)
         {
-            using (FileStream fs = file.Open(FileMode.Open))
+            using FileStream input = new FileStream(file, FileMode.Open);
+
+            const int bufferSize = 0xFC00;
+
+            byte[] buffer = new byte[bufferSize];
+            int total_blocks = (int)(input.Length / bufferSize) + 1;
+            for (int block = 0; block < total_blocks; block++)
             {
-                int buffer_size = 0xFC00;
-                byte[] buffer = new byte[buffer_size];
-                ByteArrayBuffer overflowbuffer = new ByteArrayBuffer(buffer_size);
-                int read;
-                int block = 0;
-                int total_blocks = (int)(file.Length / buffer_size) + 1;
-                do
+                input.Read(buffer, 0, bufferSize);
+
+                h0Hashes.Add(block, HashUtil.HashSHA1(buffer));
+
+                if (block % 100 == 0)
                 {
-                    read = Utils.getChunkFromStream(fs, buffer, overflowbuffer, buffer_size);
-
-                    h0hashes.Add(block, HashUtil.hashSHA1(buffer));
-
-                    block++;
-                    int progress = 100 * block / total_blocks;
-                    if (block % 100 == 0)
-                    {
-                        Console.Write("\rcalculating h0: " + progress + "%");
-                    }
-                } while (read == buffer_size);
-                Console.WriteLine("\rcalculating h0: done");
-                setBlockCount(block);
+                    Console.Write($"\rcalculating h0: {100 * block / total_blocks}%");
+                }
             }
+            Console.WriteLine("\rcalculating h0: done");
+            blockCount = total_blocks;
         }
 
-        public byte[] getHashForBlock(int block)
+        public byte[] GetHashForBlock(int block)
         {
             if (block > blockCount)
             {
-                throw new Exception("fofof");
+                throw new Exception("This shouldn't happen.");
             }
 
             MemoryStream hashes = new MemoryStream(0x400);
@@ -104,9 +91,9 @@ namespace CNUS_packer.crypto
             for (int i = 0; i < 16; i++)
             {
                 int index = h0_hash_start + i;
-                if (h0hashes.ContainsKey(index))
+                if (h0Hashes.ContainsKey(index))
                 {
-                    hashes.Write(h0hashes[index]);
+                    hashes.Write(h0Hashes[index]);
                 }
                 else
                 {
@@ -118,9 +105,9 @@ namespace CNUS_packer.crypto
             for (int i = 0; i < 16; i++)
             {
                 int index = h1_hash_start + i;
-                if (h1hashes.ContainsKey(index))
+                if (h1Hashes.ContainsKey(index))
                 {
-                    hashes.Write(h1hashes[index]);
+                    hashes.Write(h1Hashes[index]);
                 }
                 else
                 {
@@ -132,9 +119,9 @@ namespace CNUS_packer.crypto
             for (int i = 0; i < 16; i++)
             {
                 int index = h2_hash_start + i;
-                if (h2hashes.ContainsKey(index))
+                if (h2Hashes.ContainsKey(index))
                 {
-                    hashes.Write(h2hashes[index]);
+                    hashes.Write(h2Hashes[index]);
                 }
                 else
                 {
@@ -145,45 +132,24 @@ namespace CNUS_packer.crypto
             return hashes.GetBuffer();
         }
 
-        public int getBlockCount()
+        private byte[] GetH3Hashes()
         {
-            return blockCount;
-        }
-
-        public void setBlockCount(int blockCount)
-        {
-            this.blockCount = blockCount;
-        }
-
-        public byte[] getH3Hashes()
-        {
-            MemoryStream buffer = new MemoryStream(h3hashes.Count * 20);
-            for (int i = 0; i < h3hashes.Count; i++)
+            MemoryStream buffer = new MemoryStream(h3Hashes.Count * 20);
+            for (int i = 0; i < h3Hashes.Count; i++)
             {
-                buffer.Write(h3hashes[i]);
+                buffer.Write(h3Hashes[i]);
             }
 
             return buffer.GetBuffer();
         }
 
-        public byte[] getTMDHash()
+        public void SaveH3ToFile(string h3Path)
         {
-            return TMDHash;
-        }
-
-        public void setTMDHash(byte[] TMDHash)
-        {
-            this.TMDHash = TMDHash;
-        }
-
-        public void saveH3ToFile(string h3_path)
-        {
-            if (h3hashes.Count > 0)
+            if (h3Hashes.Count > 0)
             {
-                using (FileStream fos = new FileStream(h3_path, FileMode.Create))
-                {
-                    fos.Write(getH3Hashes());
-                }
+                using FileStream fos = new FileStream(h3Path, FileMode.Create);
+
+                fos.Write(GetH3Hashes());
             }
         }
     }

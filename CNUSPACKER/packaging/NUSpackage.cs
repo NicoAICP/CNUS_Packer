@@ -1,63 +1,76 @@
-using CNUS_packer.contents;
-using CNUS_packer.crypto;
-
 using System;
 using System.IO;
+using CNUSPACKER.contents;
+using CNUSPACKER.crypto;
+using CNUSPACKER.utils;
 
-namespace CNUS_packer.packaging
+namespace CNUSPACKER.packaging
 {
     public class NUSpackage
     {
-        public Ticket ticket { get; set; }
-        public TMD tmd { get; set; }
-        public FST fst { get; set; }
+        private readonly FST fst;
+        private readonly Ticket ticket;
+        private readonly TMD tmd;
 
-        public void packContents(string outputDir)
+        public NUSpackage(FST fst, Ticket ticket, TMD tmd)
+        {
+            this.fst = fst;
+            this.ticket = ticket;
+            this.tmd = tmd;
+        }
+
+        public void PackContents(string outputDir)
         {
             Console.WriteLine("Packing Contents.");
 
-            fst.getContents().packContents(outputDir);
+            Encryption encryption = GetEncryption();
+            fst.contents.PackContents(outputDir, encryption);
 
-            Content fstContent = fst.getContents().getFSTContent();
-            fstContent.SHA1 = utils.HashUtil.hashSHA1(fst.getAsData());
-            fstContent.setEncryptedFileSize(fst.getAsData().Length);
+            Console.WriteLine("Packing the FST into 00000000.app");
+            string fstPath = Path.Combine(outputDir, "00000000.app");
+            encryption.EncryptFileWithPadding(fst, fstPath, 0, Content.CONTENT_FILE_PADDING);
+            Console.WriteLine("-------------");
+            Console.WriteLine("Packed all contents\n\n");
 
-            ContentInfo contentInfo = tmd.getContentInfos().getContentInfo(0);
-            contentInfo.setSHA2Hash(utils.HashUtil.hashSHA2(fst.getContents().getAsData()));
-            tmd.updateContentInfoHash();
+            Content fstContent = fst.contents.fstContent;
+            fstContent.SHA1 = HashUtil.HashSHA1(fst.GetAsData());
+            fstContent.encryptedFileSize = fst.GetDataSize();
+
+            tmd.contentInfo.SHA2Hash = HashUtil.HashSHA2(fst.contents.GetAsData());
+            tmd.UpdateContentInfoHash();
 
             FileStream fos;
-            using (fos = new FileStream(Path.Combine(outputDir, "title.tmd"), FileMode.OpenOrCreate))
+            using (fos = new FileStream(Path.Combine(outputDir, "title.tmd"), FileMode.Create))
             {
-                fos.Write(tmd.getAsData());
+                fos.Write(tmd.GetAsData());
             }
-            Console.WriteLine("TMD saved to    " + Path.Combine(outputDir, "title.tmd"));
+            Console.WriteLine($"TMD saved to    {Path.Combine(outputDir, "title.tmd")}");
 
-            using (fos = new FileStream(Path.Combine(outputDir, "title.cert"), FileMode.OpenOrCreate))
+            using (fos = new FileStream(Path.Combine(outputDir, "title.cert"), FileMode.Create))
             {
-                fos.Write(Cert.getCertAsData());
+                fos.Write(Cert.GetCertAsData());
             }
-            Console.WriteLine("Cert saved to   " + Path.Combine(outputDir, "title.cert"));
+            Console.WriteLine($"Cert saved to   {Path.Combine(outputDir, "title.cert")}");
 
-            using (fos = new FileStream(Path.Combine(outputDir, "title.tik"), FileMode.OpenOrCreate))
+            using (fos = new FileStream(Path.Combine(outputDir, "title.tik"), FileMode.Create))
             {
-                fos.Write(ticket.getAsData());
+                fos.Write(ticket.GetAsData());
             }
-            Console.WriteLine("Ticket saved to " + Path.Combine(outputDir, "title.tik"));
+            Console.WriteLine($"Ticket saved to {Path.Combine(outputDir, "title.tik")}");
             Console.WriteLine();
         }
 
-        public void printTicketInfos()
+        public void PrintTicketInfos()
         {
-            Console.WriteLine("Encrypted with this key           : " + ticket.getDecryptedKey());
-            Console.WriteLine("Key encrypted with this key       : " + ticket.getEncryptWith());
+            Console.WriteLine($"Encrypted with this key           : {ticket.decryptedKey}");
+            Console.WriteLine($"Key encrypted with this key       : {ticket.encryptWith}");
             Console.WriteLine();
-            Console.WriteLine("Encrypted key                     : " + ticket.getEncryptedKey());
+            Console.WriteLine($"Encrypted key                     : {ticket.GetEncryptedKey()}");
         }
 
-        public Encryption getEncryption()
+        private Encryption GetEncryption()
         {
-            return tmd.getEncryption();
+            return tmd.GetEncryption();
         }
     }
 }

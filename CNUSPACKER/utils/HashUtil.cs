@@ -1,72 +1,32 @@
-using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace CNUS_packer.utils
+namespace CNUSPACKER.utils
 {
-    public class HashUtil
+    public static class HashUtil
     {
-        public static byte[] hashSHA2(byte[] data)
+        public static byte[] HashSHA2(byte[] data)
         {
             SHA256 sha256 = SHA256.Create();
-
             return sha256.ComputeHash(data);
         }
 
-        public static byte[] hashSHA1(byte[] data)
+        public static byte[] HashSHA1(byte[] data)
         {
             SHA1 sha1 = SHA1.Create();
-
             return sha1.ComputeHash(data);
         }
 
-        public static byte[] hashSHA1(FileInfo file)
+        public static byte[] HashSHA1(string file, int alignment)
         {
-            return hashSHA1(file, 0);
-        }
-
-        public static byte[] hashSHA1(FileInfo file, int alignment)
-        {
-            byte[] hash;
             SHA1 sha1 = SHA1.Create();
-            using (FileStream fs = file.Open(FileMode.Open))
-            {
-                hash = Hash(sha1, fs, fs.Length, 0x8000, alignment);
-            }
+            using FileStream input = new FileStream(file, FileMode.Open);
 
-            return hash;
-        }
+            long targetSize = Utils.Align(input.Length, alignment);
+            byte[] alignedFileContents = new byte[targetSize];
+            input.Read(alignedFileContents);
 
-        public static byte[] Hash(SHA1 digest, FileStream fs, long inputSize, int bufferSize, int alignment)
-        {
-            long target_size = (alignment == 0) ? inputSize : Utils.align(inputSize, alignment);
-
-            long cur_position = 0;
-            int inBlockBufferRead;
-
-            ByteArrayBuffer overflow = new ByteArrayBuffer(bufferSize);
-            MemoryStream finalbuffer = new MemoryStream();
-
-            do
-            {
-                byte[] blockBuffer = new byte[bufferSize];
-                if (cur_position + bufferSize > inputSize)
-                {
-                    long expectedSize = inputSize - cur_position;
-                    Utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
-                    inBlockBufferRead = bufferSize;
-                }
-                else
-                {
-                    int expectedSize = bufferSize;
-                    inBlockBufferRead = Utils.getChunkFromStream(fs, blockBuffer, overflow, expectedSize);
-                }
-                finalbuffer.Write(blockBuffer, 0, inBlockBufferRead);
-
-                cur_position += inBlockBufferRead;
-            } while (cur_position < target_size && (inBlockBufferRead == bufferSize));
-
-            return digest.ComputeHash(finalbuffer.ToArray());
+            return sha1.ComputeHash(alignedFileContents);
         }
     }
 }
