@@ -20,14 +20,15 @@ namespace CNUSPACKER.crypto
 
         public void EncryptFileWithPadding(FST fst, string outputFilename, short contentID, int blockSize)
         {
-            using FileStream output = new FileStream(outputFilename, FileMode.Create);
+            using (FileStream output = new FileStream(outputFilename, FileMode.Create))
+            {
+                MemoryStream input = new MemoryStream(fst.GetAsData());
+                BigEndianMemoryStream ivStream = new BigEndianMemoryStream(0x10);
+                ivStream.WriteBigEndian(contentID);
+                IV iv = new IV(ivStream.GetBuffer());
 
-            MemoryStream input = new MemoryStream(fst.GetAsData());
-            BigEndianMemoryStream ivStream = new BigEndianMemoryStream(0x10);
-            ivStream.WriteBigEndian(contentID);
-            IV iv = new IV(ivStream.GetBuffer());
-
-            EncryptSingleFile(input, output, fst.GetDataSize(), iv, blockSize);
+                EncryptSingleFile(input, output, fst.GetDataSize(), iv, blockSize);
+            }
         }
 
         public void EncryptFileWithPadding(FileStream input, int contentID, FileStream output, int blockSize)
@@ -55,7 +56,7 @@ namespace CNUSPACKER.crypto
                 aes.IV = Utils.CopyOfRange(blockBuffer, blockSize - 16, blockSize);
 
                 cur_position += blockSize;
-                output.Write(blockBuffer);
+                output.Write(blockBuffer, 0, blockSize);
             } while (cur_position < targetSize);
         }
 
@@ -75,7 +76,7 @@ namespace CNUSPACKER.crypto
             {
                 read = input.Read(buffer, 0, hashBlockSize);
 
-                output.Write(EncryptChunkHashed(buffer, block, hashes, contentID));
+                output.Write(EncryptChunkHashed(buffer, block, hashes, contentID), 0, 0x10000);
 
                 block++;
                 if (block % 100 == 0)
@@ -102,8 +103,8 @@ namespace CNUSPACKER.crypto
 
             byte[] encryptedContent = Encrypt(buffer);
             MemoryStream outputStream = new MemoryStream(0x10000);
-            outputStream.Write(encryptedhashes);
-            outputStream.Write(encryptedContent);
+            outputStream.Write(encryptedhashes, 0, encryptedhashes.Length);
+            outputStream.Write(encryptedContent, 0, encryptedContent.Length);
 
             return outputStream.GetBuffer();
         }

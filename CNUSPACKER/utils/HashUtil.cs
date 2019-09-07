@@ -20,13 +20,14 @@ namespace CNUSPACKER.utils
         public static byte[] HashSHA1(string file, int alignment)
         {
             SHA1 sha1 = SHA1.Create();
-            using FileStream input = new FileStream(file, FileMode.Open);
+            using (FileStream input = new FileStream(file, FileMode.Open))
+            {
+                long targetSize = Utils.Align(input.Length, alignment);
+                byte[] alignedFileContents = new byte[targetSize];
+                input.Read(alignedFileContents, 0, (int)input.Length);
 
-            long targetSize = Utils.Align(input.Length, alignment);
-            byte[] alignedFileContents = new byte[targetSize];
-            input.Read(alignedFileContents);
-
-            return sha1.ComputeHash(alignedFileContents);
+                return sha1.ComputeHash(alignedFileContents);
+            }
         }
     }
 }

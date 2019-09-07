@@ -7,9 +7,9 @@ using CNUSPACKER.utils;
 
 namespace CNUSPACKER
 {
-    internal static class Program
+    public static class Program
     {
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Console.WriteLine("CNUS_Packer v0.01 by NicoAICP [C# Port of NUSPacker by timogus]\n\n");
 
@@ -209,8 +209,10 @@ namespace CNUSPACKER
             string key = "";
             try
             {
-                using StreamReader input = new StreamReader(Settings.encryptWithFile);
-                key = input.ReadLine() ?? "";
+                using (StreamReader input = new StreamReader(Settings.encryptWithFile))
+                {
+                    key = input.ReadLine() ?? "";
+                }
             }
             catch (Exception e)
             {

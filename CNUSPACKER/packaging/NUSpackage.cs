@@ -42,19 +42,19 @@ namespace CNUSPACKER.packaging
             FileStream fos;
             using (fos = new FileStream(Path.Combine(outputDir, "title.tmd"), FileMode.Create))
             {
-                fos.Write(tmd.GetAsData());
+                fos.Write(tmd.GetAsData(), 0, tmd.GetDataSize());
             }
             Console.WriteLine($"TMD saved to    {Path.Combine(outputDir, "title.tmd")}");
 
             using (fos = new FileStream(Path.Combine(outputDir, "title.cert"), FileMode.Create))
             {
-                fos.Write(Cert.GetCertAsData());
+                fos.Write(Cert.GetCertAsData(), 0, 0xA00);
             }
             Console.WriteLine($"Cert saved to   {Path.Combine(outputDir, "title.cert")}");
 
             using (fos = new FileStream(Path.Combine(outputDir, "title.tik"), FileMode.Create))
             {
-                fos.Write(ticket.GetAsData());
+                fos.Write(ticket.GetAsData(), 0, 0x350);
             }
             Console.WriteLine($"Ticket saved to {Path.Combine(outputDir, "title.tik")}");
             Console.WriteLine();

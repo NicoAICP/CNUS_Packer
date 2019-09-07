@@ -58,25 +58,26 @@ namespace CNUSPACKER.crypto
 
         private void CalculateH0Hashes(string file)
         {
-            using FileStream input = new FileStream(file, FileMode.Open);
-
-            const int bufferSize = 0xFC00;
-
-            byte[] buffer = new byte[bufferSize];
-            int total_blocks = (int)(input.Length / bufferSize) + 1;
-            for (int block = 0; block < total_blocks; block++)
+            using (FileStream input = new FileStream(file, FileMode.Open))
             {
-                input.Read(buffer, 0, bufferSize);
+                const int bufferSize = 0xFC00;
 
-                h0Hashes.Add(block, HashUtil.HashSHA1(buffer));
-
-                if (block % 100 == 0)
+                byte[] buffer = new byte[bufferSize];
+                int total_blocks = (int)(input.Length / bufferSize) + 1;
+                for (int block = 0; block < total_blocks; block++)
                 {
-                    Console.Write($"\rcalculating h0: {100 * block / total_blocks}%");
+                    input.Read(buffer, 0, bufferSize);
+
+                    h0Hashes.Add(block, HashUtil.HashSHA1(buffer));
+
+                    if (block % 100 == 0)
+                    {
+                        Console.Write($"\rcalculating h0: {100 * block / total_blocks}%");
+                    }
                 }
+                Console.WriteLine("\rcalculating h0: done");
+                blockCount = total_blocks;
             }
-            Console.WriteLine("\rcalculating h0: done");
-            blockCount = total_blocks;
         }
 
         public byte[] GetHashForBlock(int block)
@@ -93,7 +94,7 @@ namespace CNUSPACKER.crypto
                 int index = h0_hash_start + i;
                 if (h0Hashes.ContainsKey(index))
                 {
-                    hashes.Write(h0Hashes[index]);
+                    hashes.Write(h0Hashes[index], 0, h0Hashes[index].Length);
                 }
                 else
                 {
@@ -107,7 +108,7 @@ namespace CNUSPACKER.crypto
                 int index = h1_hash_start + i;
                 if (h1Hashes.ContainsKey(index))
                 {
-                    hashes.Write(h1Hashes[index]);
+                    hashes.Write(h1Hashes[index], 0, h1Hashes[index].Length);
                 }
                 else
                 {
@@ -121,7 +122,7 @@ namespace CNUSPACKER.crypto
                 int index = h2_hash_start + i;
                 if (h2Hashes.ContainsKey(index))
                 {
-                    hashes.Write(h2Hashes[index]);
+                    hashes.Write(h2Hashes[index], 0, h2Hashes[index].Length);
                 }
                 else
                 {
@@ -137,7 +138,7 @@ namespace CNUSPACKER.crypto
             MemoryStream buffer = new MemoryStream(h3Hashes.Count * 20);
             for (int i = 0; i < h3Hashes.Count; i++)
             {
-                buffer.Write(h3Hashes[i]);
+                buffer.Write(h3Hashes[i], 0, h3Hashes[i].Length);
             }
 
             return buffer.GetBuffer();
@@ -147,9 +148,10 @@ namespace CNUSPACKER.crypto
         {
             if (h3Hashes.Count > 0)
             {
-                using FileStream fos = new FileStream(h3Path, FileMode.Create);
-
-                fos.Write(GetH3Hashes());
+                using (FileStream fos = new FileStream(h3Path, FileMode.Create))
+                {
+                    fos.Write(GetH3Hashes(), 0, GetH3Hashes().Length);
+                }
             }
         }
     }

@@ -8,7 +8,6 @@ namespace CNUSPACKER.packaging
     public class TMD
     {
         private const int signatureType = 0x00010004;
-        private readonly byte[] signature = new byte[0x100];
         private static readonly byte[] issuer = Utils.HexStringToByteArray("526F6F742D434130303030303030332D435030303030303030620000000000000000000000000000000000000000000000000000000000000000000000000000");
 
         private const byte version = 0x01;
@@ -56,9 +55,8 @@ namespace CNUSPACKER.packaging
             BigEndianMemoryStream buffer = new BigEndianMemoryStream(GetDataSize());
 
             buffer.WriteBigEndian(signatureType);
-            buffer.Write(signature);
-            buffer.Seek(60, SeekOrigin.Current);
-            buffer.Write(issuer);
+            buffer.Seek(316, SeekOrigin.Current);
+            buffer.Write(issuer, 0, issuer.Length);
 
             buffer.WriteByte(version);
             buffer.WriteByte(CACRLVersion);
@@ -77,15 +75,15 @@ namespace CNUSPACKER.packaging
             buffer.WriteBigEndian(bootIndex);
             buffer.Seek(2, SeekOrigin.Current);
 
-            buffer.Write(SHA2);
+            buffer.Write(SHA2, 0, 32);
 
-            buffer.Write(contentInfo.GetAsData());
-            buffer.Write(contents.GetAsData());
+            buffer.Write(contentInfo.GetAsData(), 0, 2304);
+            buffer.Write(contents.GetAsData(), 0, contents.GetDataSize());
 
             return buffer.GetBuffer();
         }
 
-        private int GetDataSize()
+        public int GetDataSize()
         {
             const int staticSize = 0x204;
             const int contentInfoSize = 0x40 * ContentInfo.staticDataSize;

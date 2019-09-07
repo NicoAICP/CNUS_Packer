@@ -116,7 +116,7 @@ namespace CNUSPACKER.fst
 
             foreach (FSTEntry entry in children)
             {
-                buffer.Write(entry.GetAsData());
+                buffer.Write(entry.GetAsData(), 0, entry.GetDataSize());
             }
 
             return buffer.GetBuffer();

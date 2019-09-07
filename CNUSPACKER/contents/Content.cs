@@ -108,7 +108,7 @@ namespace CNUSPACKER.contents
             buffer.WriteBigEndian(type);
             buffer.WriteBigEndian(encryptedFileSize);
 
-            buffer.Write(SHA1);
+            buffer.Write(SHA1, 0, 20);
 
             return buffer.GetBuffer();
         }
@@ -144,19 +144,20 @@ namespace CNUSPACKER.contents
 
         private long PackEncrypted(string decryptedFile, string outputFilePath, ContentHashes hashes, Encryption encryption)
         {
-            using FileStream input = new FileStream(decryptedFile, FileMode.Open);
-            using FileStream output = new FileStream(outputFilePath, FileMode.Create);
-
-            if (IsHashed)
+            using (FileStream input = new FileStream(decryptedFile, FileMode.Open))
+            using (FileStream output = new FileStream(outputFilePath, FileMode.Create))
             {
-                encryption.EncryptFileHashed(input, ID, output, hashes);
-            }
-            else
-            {
-                encryption.EncryptFileWithPadding(input, ID, output, CONTENT_FILE_PADDING);
-            }
+                if (IsHashed)
+                {
+                    encryption.EncryptFileHashed(input, ID, output, hashes);
+                }
+                else
+                {
+                    encryption.EncryptFileWithPadding(input, ID, output, CONTENT_FILE_PADDING);
+                }
 
-            return output.Length;
+                return output.Length;
+            }
         }
 
         private string PackDecrypted()
@@ -182,7 +183,7 @@ namespace CNUSPACKER.contents
                         Utils.CopyFileInto(entry.filepath, fos, output);
 
                         int padding = (int)(cur_offset - (old_offset + entry.fileSize));
-                        fos.Write(new byte[padding]);
+                        fos.Write(new byte[padding], 0, padding);
                     }
                     else
                     {

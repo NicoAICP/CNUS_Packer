@@ -15,7 +15,7 @@ namespace CNUSPACKER.utils
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(shortBytes);
 
-            base.Write(shortBytes);
+            base.Write(shortBytes, 0, 2);
         }
 
         public void WriteBigEndian(int value)
@@ -24,7 +24,7 @@ namespace CNUSPACKER.utils
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(intBytes);
 
-            base.Write(intBytes);
+            base.Write(intBytes, 0, 4);
         }
 
         public void WriteBigEndian(uint value)
@@ -33,7 +33,7 @@ namespace CNUSPACKER.utils
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(uintBytes);
 
-            base.Write(uintBytes);
+            base.Write(uintBytes, 0, 4);
         }
 
         public void WriteBigEndian(long value)
@@ -42,7 +42,7 @@ namespace CNUSPACKER.utils
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(longBytes);
 
-            base.Write(longBytes);
+            base.Write(longBytes, 0, 8);
         }
     }
 }

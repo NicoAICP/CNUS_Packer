@@ -22,24 +22,24 @@ namespace CNUSPACKER.packaging
         {
             Random rdm = new Random();
             BigEndianMemoryStream buffer = new BigEndianMemoryStream(0x350);
-            buffer.Write(Utils.HexStringToByteArray("00010004"));
+            buffer.Write(Utils.HexStringToByteArray("00010004"), 0, 4);
             byte[] randomData = new byte[0x100];
             rdm.NextBytes(randomData);
-            buffer.Write(randomData);
+            buffer.Write(randomData, 0, 0x100);
             buffer.Seek(0x3C, SeekOrigin.Current);
-            buffer.Write(Utils.HexStringToByteArray("526F6F742D434130303030303030332D58533030303030303063000000000000"));
+            buffer.Write(Utils.HexStringToByteArray("526F6F742D434130303030303030332D58533030303030303063000000000000"), 0, 32);
             buffer.Seek(0x5C, SeekOrigin.Current);
-            buffer.Write(Utils.HexStringToByteArray("010000"));
-            buffer.Write(GetEncryptedKey().key);
-            buffer.Write(Utils.HexStringToByteArray("000005"));
+            buffer.Write(Utils.HexStringToByteArray("010000"), 0, 3);
+            buffer.Write(GetEncryptedKey().key, 0, 0x10);
+            buffer.Write(Utils.HexStringToByteArray("000005"), 0, 3);
             randomData = new byte[0x06];
             rdm.NextBytes(randomData);
-            buffer.Write(randomData);
+            buffer.Write(randomData, 0, 0x06);
             buffer.Seek(0x04, SeekOrigin.Current);
             buffer.WriteBigEndian(titleID);
-            buffer.Write(Utils.HexStringToByteArray("00000011000000000000000000000005"));
+            buffer.Write(Utils.HexStringToByteArray("00000011000000000000000000000005"), 0, 16);
             buffer.Seek(0xB0, SeekOrigin.Current);
-            buffer.Write(Utils.HexStringToByteArray("00010014000000AC000000140001001400000000000000280000000100000084000000840003000000000000FFFFFF01"));
+            buffer.Write(Utils.HexStringToByteArray("00010014000000AC000000140001001400000000000000280000000100000084000000840003000000000000FFFFFF01"), 0, 48);
             buffer.Seek(0x7C, SeekOrigin.Current);
 
             return buffer.GetBuffer();
@@ -49,9 +49,9 @@ namespace CNUSPACKER.packaging
         {
             BigEndianMemoryStream ivStream = new BigEndianMemoryStream(0x10);
             ivStream.WriteBigEndian(titleID);
-            Encryption encrypt = new Encryption(encryptWith, new IV(ivStream.GetBuffer()));
+            Encryption encryption = new Encryption(encryptWith, new IV(ivStream.GetBuffer()));
 
-            return new Key(encrypt.Encrypt(decryptedKey.key));
+            return new Key(encryption.Encrypt(decryptedKey.key));
         }
     }
 }
