@@ -5,10 +5,13 @@
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <TrimUnusedDependencies>true</TrimUnusedDependencies>
     <RootNamespace>CNUSPACKER</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageVersion>1.0.1</PackageVersion>
+    <Authors>NicoAICP</Authors>
+    <RepositoryUrl>https://github.com/Hotbrawl20/CNUS_Packer</RepositoryUrl>
+    <Description>CNUSPACKER is a C# version of nuspacker, used to pack files into a format usable by the WiiU.</Description>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>WiiU; packing</PackageTags>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Packaging.Tools.Trimming" Version="1.1.0-preview1-26619-01" />
-  </ItemGroup>
 
 </Project>
