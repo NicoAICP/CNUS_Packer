@@ -63,27 +63,5 @@ namespace CNUSPACKER.utils
 
             return dest;
         }
-
-        public static void CopyFileInto(string path, FileStream output, string s = null)
-        {
-            if (s != null)
-                Console.Write(s);
-
-            long written = 0;
-            using (FileStream fs = File.Open(path, FileMode.Open))
-            {
-                long filesize = fs.Length;
-                byte[] buffer = new byte[0x10000];
-                do
-                {
-                    int read = fs.Read(buffer, 0, 0x10000);
-                    output.Write(buffer, 0, read);
-                    written += read;
-                    if (s != null)
-                        Console.Write($"\r{s} : {100 * written / filesize}%");
-                } while (written < filesize);
-                Console.WriteLine();
-            }
-        }
     }
 }
