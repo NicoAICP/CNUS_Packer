@@ -175,13 +175,18 @@ namespace CNUSPACKER.contents
                         {
                             Console.WriteLine("FAILED");
                         }
-                        long old_offset = cur_offset;
-                        cur_offset += Utils.Align(entry.fileSize, ALIGNMENT_IN_CONTENT_FILE);
-                        string output = $"[{cnt_file}/{totalCount}] Writing at {old_offset} | FileSize: {entry.fileSize} | {entry.filename}";
 
-                        Utils.CopyFileInto(entry.filepath, fos, output);
+                        Console.Write($"[{cnt_file}/{totalCount}] Writing at {cur_offset} | FileSize: {entry.fileSize} | {entry.filename}...");
+                        using (FileStream input = new FileStream(entry.filepath, FileMode.Open))
+                        {
+                            input.CopyTo(fos);
+                        }
+                        Console.WriteLine($"\r[{cnt_file}/{totalCount}] Writing at {cur_offset} | FileSize: {entry.fileSize} | {entry.filename} : 100%");
 
-                        int padding = (int)(cur_offset - (old_offset + entry.fileSize));
+                        long alignedFileSize = Utils.Align(entry.fileSize, ALIGNMENT_IN_CONTENT_FILE);
+                        cur_offset += alignedFileSize;
+
+                        long padding = alignedFileSize - entry.fileSize;
                         fos.Write(new byte[padding]);
                     }
                     else
