@@ -20,17 +20,18 @@ namespace CNUSPACKER.packaging
             Console.WriteLine("-----");
             foreach (ContentRule rule in rules)
             {
-                Console.WriteLine("Apply rule \"" + rule.pattern + "\"");
+                Regex regex = new Regex(rule.pattern, RegexOptions.IgnoreCase);
+                Console.WriteLine($"Apply rule \"{rule.pattern}\"");
                 if (rule.contentPerMatch)
                 {
-                    SetNewContentRecursiveRule("", root, targetContents, rule);
+                    SetNewContentRecursiveRule("", root, targetContents, rule.details, regex);
                 }
                 else
                 {
                     cur_content = targetContents.GetNewContent(rule.details);
                     cur_content_first = cur_content;
                     cur_content_size = 0L;
-                    bool result = SetContentRecursiveRule("", root, targetContents, rule);
+                    bool result = SetContentRecursiveRule("", root, targetContents, rule.details, regex);
                     if (!result)
                     {
                         Console.WriteLine("No file matched the rule. Lets delete the content again");
@@ -41,18 +42,16 @@ namespace CNUSPACKER.packaging
             }
         }
 
-        private static Content SetNewContentRecursiveRule(string path, FSTEntry currentEntry, Contents targetContents, ContentRule rule)
+        private static Content SetNewContentRecursiveRule(string path, FSTEntry currentEntry, Contents targetContents, ContentDetails details, Regex regex)
         {
             path += currentEntry.filename + "/";
-            Regex p = new Regex(rule.pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             Content result = null;
 
             if (currentEntry.children.Count == 0)
             {
-                Match m = p.Match(path);
-                if (m.Success)
+                if (regex.IsMatch(path))
                 {
-                    result = targetContents.GetNewContent(rule.details);
+                    result = targetContents.GetNewContent(details);
                 }
             }
 
@@ -60,15 +59,14 @@ namespace CNUSPACKER.packaging
             {
                 if (child.isDir)
                 {
-                    result = SetNewContentRecursiveRule(path, child, targetContents, rule) ?? result;
+                    result = SetNewContentRecursiveRule(path, child, targetContents, details, regex) ?? result;
                 }
                 else
                 {
                     string childPath = path + child.filename;
-                    Match m = p.Match(childPath);
-                    if (m.Success)
+                    if (regex.IsMatch(childPath))
                     {
-                        Content result_content = targetContents.GetNewContent(rule.details);
+                        Content result_content = targetContents.GetNewContent(details);
                         Console.WriteLine($"Set content to {result_content.ID:X} for: {childPath}");
                         child.SetContent(result_content);
                         result = result_content;
@@ -82,15 +80,13 @@ namespace CNUSPACKER.packaging
             return result;
         }
 
-        private static bool SetContentRecursiveRule(string path, FSTEntry currentEntry, Contents targetContents, ContentRule rule)
+        private static bool SetContentRecursiveRule(string path, FSTEntry currentEntry, Contents targetContents, ContentDetails details, Regex regex)
         {
             path += currentEntry.filename + "/";
-            Regex p = new Regex(rule.pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             bool matchFound = false;
             if (currentEntry.children.Count == 0)
             {
-                Match m = p.Match(path);
-                if (m.Success)
+                if (regex.IsMatch(path))
                 {
                     Console.WriteLine($"Set content to {cur_content.ID:X} ({cur_content_size:X},{currentEntry.fileSize:X}) for: {path}");
                     currentEntry.SetContent(cur_content);
@@ -105,18 +101,17 @@ namespace CNUSPACKER.packaging
             {
                 if (child.isDir)
                 {
-                    matchFound |= SetContentRecursiveRule(path, child, targetContents, rule);
+                    matchFound |= SetContentRecursiveRule(path, child, targetContents, details, regex);
                 }
                 else
                 {
                     string childPath = path + child.filename;
-                    Match m = p.Match(childPath);
-                    if (m.Success)
+                    if (regex.IsMatch(childPath))
                     {
                         if (cur_content_size + child.fileSize > MAX_CONTENT_LENGTH)
                         {
                             Console.WriteLine($"Info: Target content size is bigger than {MAX_CONTENT_LENGTH} bytes. Content will be split into multiple files.");
-                            cur_content = targetContents.GetNewContent(rule.details);
+                            cur_content = targetContents.GetNewContent(details);
                             cur_content_size = 0;
                         }
                         cur_content_size += child.fileSize;
