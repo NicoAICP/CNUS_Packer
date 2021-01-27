@@ -7,7 +7,7 @@ namespace CNUSPACKER.crypto
 
         public IV(byte[] iv)
         {
-            if (iv != null && iv.Length == LENGTH)
+            if (iv?.Length == LENGTH)
             {
                 this.iv = iv;
             }

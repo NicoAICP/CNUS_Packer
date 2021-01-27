@@ -9,7 +9,7 @@ namespace CNUSPACKER.crypto
 
         public Key(byte[] key)
         {
-            if (key != null && key.Length == LENGTH)
+            if (key?.Length == LENGTH)
             {
                 this.key = key;
             }
