@@ -14,7 +14,7 @@ namespace CNUSPACKER
         public const string defaultEncryptionKey = "13371337133713371337133713371337";
         public const string defaultEncryptWithKey = "00000000000000000000000000000000";
 
-        public const string pathToAppXml = @"\code\app.xml";
+        public const string pathToAppXml = @"/code/app.xml";
 
         public const string tmpDir = "tmp";
     }
